@@ -18,6 +18,36 @@
 	
 > A doubtful friend is worse than a certain enemy. Let a man be one thing or the other, and we then know how to meet him. - **Aesop**
 
+## Quickstart
+
+Truss uses a simple `(predicate arg)` pattern that should be **immediately familiar** to anyone that uses Clojure. 
+
+This one example covers **most of the Truss API**:
+
+```clojure
+(defn square [n]
+  (let [n (have integer? n)]
+    (* n n)))
+
+(square 5)   ; => 25
+(square nil) ; =>
+;; Invariant violation in `taoensso.truss.examples:11` [pred-form, val]:
+;; [(integer? n), <nil>]
+;; {:?form nil,
+;;  :instant 1450937904762,
+;;  :ns "taoensso.truss.examples",
+;;  :elidable? true,
+;;  :val nil,
+;;  :val-type nil,
+;;  :?err nil,
+;;  :*assert* true,
+;;  :?data nil,
+;;  :?line 11,
+;;  :form-str "(integer? n)"}
+```
+
+The `(have integer? <arg>)` annotation is a standard Clojure form that both **documents the intention of the code** in a way that **cannot go stale**, and provides a **runtime check** that throws a detailed error message on any unexpected violation.
+
 ## Features
 
  * Tiny cross-platform codebase with zero external dependencies
@@ -60,35 +90,7 @@ Having the freedom to reinforce code only **where and when you judge it worthwhi
  3. Eliminates upfront buy-in costs
  4. Allows you to retain control over long-term cost/benefit trade-offs
 
-## What's the API like?
-
-Truss uses a simple `(predicate arg)` pattern that should be immediately familiar to anyone that uses Clojure:
-
-```clojure
-(defn int-square [n]
-  (let [n (have integer? n)]
-    (* n n)))
-
-(int-square 5)   ; => 25
-(int-square nil) ; =>
-;; Unhandled clojure.lang.ExceptionInfo
-;; Invariant violation in `my-ns:18` [pred-form, val]: [(integer? n), <nil>]
-;;   {:?form nil,
-;;    :instant 1450868195464,
-;;    :ns "my-ns",
-;;    :elidable? true,
-;;    :val nil,
-;;    :val-type nil,
-;;    :?err nil,
-;;    :*assert* true,
-;;    :?data nil,
-;;    :?line 18,
-;;    :form-str "(integer? n)"}
-```
-
-The `(have integer? <arg>)` annotation is a standard Clojure form that both **documents the intention of the code** in a way that **cannot go stale**, and provides a **runtime check** that throws a detailed error message on any unexpected violation.
-
-## Getting started
+## Detailed usage guide
  
 Add the necessary dependency to your project:
 
@@ -101,11 +103,11 @@ And setup your namespace imports:
 ```clojure
 (ns my-clj-ns ; Clojure namespace
   (:require
-   [taoensso.truss :as truss :refer (have have? have!)]))
+   [taoensso.truss :as truss :refer (have have! have?)]))
 
 (ns my-cljs ; ClojureScript namespace
   (:require-macros
-   [taoensso.truss :as truss :refer (have have? have!)]))
+   [taoensso.truss :as truss :refer (have have! have?)]))
 ```
 
 And you're good to go - see the examples below for usage ideas.
@@ -115,32 +117,158 @@ And you're good to go - see the examples below for usage ideas.
 ### Examples: inline assertions and bindings
 
 ```clojure
-;; TODO
-;; incl. ex. case
+;; You can add an assertion inline
+(println (have string? "foo"))
+
+;; Or you can add an assertion to your bindings
+(let [s (have string? "foo")]
+  (println s))
+
+;; Anything that fails the predicate will throw an error
+(have string? 42) ; =>
+;; Invariant violation in `taoensso.truss.examples:44` [pred-form, val]:
+;; [(string? 42), 42]
+;; {:?form nil,
+;;  :instant 1450937836680,
+;;  :ns "taoensso.truss.examples",
+;;  :elidable? true,
+;;  :val 42,
+;;  :val-type java.lang.Long,
+;;  :?err nil,
+;;  :*assert* true,
+;;  :?data nil,
+;;  :?line 44,
+;;  :form-str "(string? 42)"}
+
+;; Truss also automatically traps and handles exceptions
+(have string? (/ 1 0)) ; =>
+;; Invariant violation in `taoensso.truss.examples:59` [pred-form, val]:
+;; [(string? (/ 1 0)), <undefined>]
+;; `val` error: java.lang.ArithmeticException: Divide by zero
+;; {:?form nil,
+;;  :instant 1450938025898,
+;;  :ns "taoensso.truss.examples",
+;;  :elidable? true,
+;;  :val undefined/threw-error,
+;;  :val-type undefined/threw-error,
+;;  :?err #error {
+;;  :cause "Divide by zero"
+;;  :via
+;;  [{:type java.lang.ArithmeticException
+;;    :message "Divide by zero"
+;;    :at [clojure.lang.Numbers divide "Numbers.java" 158]}]
+;;  :trace [...]}]
+;;  :*assert* true,
+;;  :?data nil,
+;;  :?line 59,
+;;  :form-str "(string? (/ 1 0))"}
 ```
 
 ### Examples: destructured bindings
 
 ```clojure
-;; TODO
-```
+;; You can assert against multipe args at once
+(let [[x y z] (have string? "foo" "bar" "baz")]
+  (str x y z)) ; => "foobarbaz"
 
-### Examples: special predicates
-
-```clojure
-;; TODO
+;; This won't compromise error message clarity
+(let [[x y z] (have string? "foo" 42 "baz")]
+  (str x y z)) ; =>
+  ;; Invariant violation in `taoensso.truss.examples:91` [pred-form, val]:
+;; [(string? 42), 42]
+;; {:?form nil,
+;;  :instant 1450938267043,
+;;  :ns "taoensso.truss.examples",
+;;  :elidable? true,
+;;  :val 42,
+;;  :val-type java.lang.Long,
+;;  :?err nil,
+;;  :*assert* true,
+;;  :?data nil,
+;;  :?line 91,
+;;  :form-str "(string? 42)"}
 ```
 
 ### Examples: attaching debug data
 
+You can attach arbitrary debug data to be displayed on violations.
+
 ```clojure
-;; TODO
+(defn my-handler [ring-req x y]
+  (let [[x y] (have integer? x y :data {:ring-req ring-req})]
+    (* x y)))
+
+(my-handler {:foo :bar} 5 nil) ; =>
+;; Invariant violation in `taoensso.truss.examples:146` [pred-form, val]:
+;; [(integer? y), <nil>]
+;; {:?form nil,
+;;  :instant 1450939196719,
+;;  :ns "taoensso.truss.examples",
+;;  :elidable? true,
+;;  :val nil,
+;;  :val-type nil,
+;;  :?err nil,
+;;  :*assert* true,
+;;  :?data {:ring-req {:foo :bar}}, ; <--- This got included
+;;  :?line 146,
+;;  :form-str "(integer? y)"}
 ```
 
 ### Examples: assertions within data structures
 
 ```clojure
-;; TODO
+;;; Compare
+(have vector?      [:a :b :c]) ; => [:a :b :c]
+(have keyword? :in [:a :b :c]) ; => [:a :b :c]
+```
+
+### Examples: assertions within :pre/:post conditions
+
+As you'd expect, just make sure to use the `have?` variant which always returns a truthy val on success.
+
+```clojure
+(defn square [n]
+  ;; Note the use of `have?` instead of `have`
+  {:pre  [(have? #(or (nil? %) (integer? %)) n)]
+   :post [(have? integer? %)]}
+  (let [n (or n 1)]
+    (* n n)))
+
+(square 5)   ; => 25
+(square nil) ; => 1
+```
+
+### Examples: special predicates
+
+Truss offers some shorthands for your convenience. **These are all optional**: the same effect can always be achieved with an equivalent predicate fn.
+
+```clojure
+;; A predicate can be anything
+(have #(and (integer? %) (odd? %) (> % 5)) 7) ; => 7
+
+;; Omit the predicate as a shorthand for #(not (nil? %))
+(have "foo") ; => "foo"
+(have nil)   ; => Error
+
+;;; There's a number of other optional shorthands
+
+;; Combine predicates (or)
+(have [:or nil? string?] "foo") ; => "foo"
+
+;; Combine predicates (and)
+(have [:and integer? even? pos?] 6) ; => 6
+
+;; Element of
+(have [:el #{:a :b :c :d}] :b) ; => :b
+
+;; Superset
+(have [:set>= #{:a :b}] #{:a :b :c}) ; => #{:a :b :c}
+
+;; Key superset
+(have [:ks>= #{:a :b}] {:a "A" :b nil :c "C"}) ; => {:a "A" :b nil :c "C"}
+
+;; Non-nil keys
+(have [:ks-nnil? #{:a :b}] {:a "A" :b nil :c "C"}) ; => Error
 ```
 
 ## FAQ
@@ -164,23 +292,22 @@ For simple predicates (including `instance?` checks), modern JITs work great; th
 
 In rare cases where the cost does matter (e.g. for an unusually expensive predicate), Truss supports complete elision in production code. Disable `clojure.core/*assert*` and Truss forms will noop, passing their arguments through with **zero performance overhead**.
 
-An extra macro is provided (`have!`) which ignores `*assert*` and so can never be elided. This can be handy for implementing (and documenting) critical checks like security assertions that you never want disabled.
+An extra macro is provided (`have!`) which ignores `*assert*` and so can never be elided. This is handy for implementing (and documenting) critical checks like security assertions that you never want disabled.
 
 ```clojure
 (defn get-restricted-resource [ring-session]
-
   ;; This is an important security check so we'll use `have!` here instead of
   ;; `have` to make sure the check is never elided (skipped):
   (have! string? (:auth-token ring-session))
 
-  (return-the-resource))
+  "return-restricted-resource-content")
 ```
 
 > **Tip**: when in doubt just use `have!` instead of `have`
 
 #### How do I disable `clojure.core/*assert*`?
 
-If you're using Leiningen, you can add the following to your project.clj:
+If you're using Leiningen, you can add the following to your `project.clj`:
 
 ```clojure
 :global-vars {;; *warn-on-reflection* true
@@ -247,7 +374,7 @@ Some things are just _much_ easier in a Lisp. Logging's one of them, this is ano
 
 #### What's your view on static vs dynamic typing?
 
-I've used and enjoyed aspects of pretty much every type system at one point or another. What I reach for on a particular job is entirely dependent on what I expect would be the most productive for that job.
+I've used and enjoyed aspects of a number of type systems at one point or another. What I reach for on a particular job is entirely dependent on what I expect would be the most productive for that job.
 
 Likewise, the tools _you'll_ find most productive will necessarily depend _on you_: your objectives and your preferred style of working. Trying to argue that one kind of programming is strictly better than another is like trying to argue that a chisel is strictly better than a wrench.
 

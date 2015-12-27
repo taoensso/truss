@@ -13,7 +13,8 @@
                 }
 
   :dependencies
-  [[org.clojure/clojure "1.5.1"]]
+  [[org.clojure/clojure "1.5.1"]
+   [com.taoensso/encore "2.31.3"]]
 
   :plugins
   [[lein-pprint  "1.1.2"]

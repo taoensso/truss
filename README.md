@@ -1,4 +1,4 @@
-**Still working on publishing this**: ETA early Jan 2016
+**Status**: still need to find some time to finish publishing this. ETA early Jan 2016.
 
 [More by @ptaoussanis] | **[CHANGELOG]** | [API] | current [Break Version] below:
 
@@ -19,6 +19,8 @@
 > A doubtful friend is worse than a certain enemy. Let a man be one thing or the other, and we then know how to meet him. - **Aesop**
 
 ## Quickstart
+
+**TODO**: Embed video
 
 Truss uses a simple `(predicate arg)` pattern that should be **immediately familiar** to anyone that uses Clojure. 
 
@@ -56,8 +58,6 @@ The `(have integer? <arg>)` annotation is a standard Clojure form that both **do
  * Minimal-to-zero runtime performance cost
 
 ## Motivation
-
-**TODO**: Embed video
 
 Clojure is a beautiful language full of smart trade-offs that tends to produce production code that's short, simple, and easy to understand.
 
@@ -275,7 +275,7 @@ Truss offers some shorthands for your convenience. **These are all optional**: t
 
 #### What's the performance cost?
 
-Insignificant. Truss has been **highly tuned** to minimize both code expansion size[1] and runtime costs.
+Usually insignificant. Truss has been tuned to minimize both code expansion size[1] and runtime costs.
 
 ```clojure
 (quick-bench 100000 ; 100k iterations
@@ -332,7 +332,7 @@ Personally, I tend to favour Truss when possible because an assertion:
 
   1. Is present _precisely_ where it's relevant
   2. Acts as a form of documentation
-  3. Tends to be quicker to write than a test
+  3. Tends to be quicker to write and keep up-to-date than a test
   4. Offers runtime protection
 
 #### How does this compare to gradual typing / [core.typed]?
@@ -349,7 +349,7 @@ Some of the challenges I've noticed with gradual typing:
   6. Sometimes clumsy/difficult to define nuanced types (e.g. transducers)
   7. Low control over long-term cost/benefit trade-offs (can be difficult to apply with precision where it'd most help)
 
-To be clear: there's absolutely times when gradual typing provides a wonderful fit. Indeed, I've found the practical overlap between core.typed and Truss to be quite low and the two often even complimentary.
+To be clear: there's absolutely times when gradual typing provides a wonderful fit. Indeed, I've found the practical overlap between core.typed and Truss small and the two often complimentary.
 
 Experiment, weigh your options, choose whatever makes sense for your team and objectives.
 
@@ -359,10 +359,10 @@ Confession: I wrote Truss before Schema was published so I've never actually use
 
 Some superficial observations from looking at the README now:
 
-  1. Goals seem to be a superset of Truss? (coersions, etc.)
+  1. Goals seem to be a superset of Truss? (incl. coersions, etc.)
   2. Seems to be more declarative (separates structure from validation calls)
   3. Seems to be more concerned with types than general (predicate) conditions?
-  4. Codebase and API both seem considerably larger?
+  4. Codebase and API both seem significantly more extensive?
 
 Would definitely encourage checking it out if you haven't!
 

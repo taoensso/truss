@@ -1,14 +1,42 @@
-(ns taoensso.truss
-  {:author "Peter Taoussanis (@ptaoussanis)"}
-  #+clj
-  (:require
-   [clojure.set     :as set]
-   [taoensso.encore :as enc :refer (if-cljs catch-errors* qb)])
+(ns taoensso.truss.impl
+  "Private implementation details"
+  #+clj  (:require [clojure.set :as set])
+  #+cljs (:require [clojure.set :as set])
+  #+cljs (:require-macros
+          [taoensso.truss.impl :as impl-macros
+           :refer (catch-errors* -invariant1)]))
 
-  #+cljs
-  (:require
-   [clojure.set     :as set]
-   [taoensso.encore :as enc :refer-macros (if-cljs catch-errors* qb)]))
+(comment (require '[taoensso.encore :as enc :refer (qb)]))
+
+;;;; Manual Encore imports
+;; A bit of a nuisance but:
+;;   * Allows Encore to depend on Truss (esp. nb for back-compatibility wrappers)
+;;   * Allows Truss to be entirely dependency free
+
+(defmacro if-cljs [then else] (if (:ns &env) then else))
+(defmacro catch-errors*
+  ;; TODO js/Error instead of :default as temp workaround for http://goo.gl/UW7773
+  ([try-form error-sym error-form]
+   `(if-cljs
+      (try ~try-form (catch js/Error  ~error-sym ~error-form))
+      (try ~try-form (catch Throwable ~error-sym ~error-form))))
+  ([try-form error-sym error-form finally-form]
+   `(if-cljs
+      (try ~try-form (catch js/Error  ~error-sym ~error-form) (finally ~finally-form))
+      (try ~try-form (catch Throwable ~error-sym ~error-form) (finally ~finally-form)))))
+
+(defn rsome   [pred coll] (reduce (fn [acc in] (when-let [p (pred in)] (reduced p))) nil coll))
+(defn revery? [pred coll] (reduce (fn [acc in] (if (pred in) true (reduced nil))) true coll))
+
+(defn set*     [x] (if (set? x) x (set x)))
+(defn ks=      [ks m] (=             (set (keys m)) (set* ks)))
+(defn ks<=     [ks m] (set/subset?   (set (keys m)) (set* ks)))
+(defn ks>=     [ks m] (set/superset? (set (keys m)) (set* ks)))
+(defn ks-nnil? [ks m] (revery? #(not (nil? (get m %)))    ks))
+
+(defn now-dt [] #+clj (java.util.Date.) #+cljs (js/Date.))
+
+;;;; Truss
 
 (defn- non-throwing [pred] (fn [x] (catch-errors* (pred x) _ nil)))
 (defn -invar-pred
@@ -18,33 +46,33 @@
   (if-not (vector? pred-form) pred-form
     (let [[type p1 p2 & more] pred-form]
       (case type
-        :set=     (fn [x] (=             (enc/set* x) (enc/set* p1)))
-        :set<=    (fn [x] (set/subset?   (enc/set* x) (enc/set* p1)))
-        :set>=    (fn [x] (set/superset? (enc/set* x) (enc/set* p1)))
-        :ks=      (fn [x] (enc/ks=      p1 x))
-        :ks<=     (fn [x] (enc/ks<=     p1 x))
-        :ks>=     (fn [x] (enc/ks>=     p1 x))
-        :ks-nnil? (fn [x] (enc/ks-nnil? p1 x))
-        (:el :in)         (fn [x]      (contains? (enc/set* p1) x))
-        (:not-el :not-in) (fn [x] (not (contains? (enc/set* p1) x)))
+        :set=     (fn [x] (=             (set* x) (set* p1)))
+        :set<=    (fn [x] (set/subset?   (set* x) (set* p1)))
+        :set>=    (fn [x] (set/superset? (set* x) (set* p1)))
+        :ks=      (fn [x] (ks=      p1 x))
+        :ks<=     (fn [x] (ks<=     p1 x))
+        :ks>=     (fn [x] (ks>=     p1 x))
+        :ks-nnil? (fn [x] (ks-nnil? p1 x))
+        (:el :in)         (fn [x]      (contains? (set* p1) x))
+        (:not-el :not-in) (fn [x] (not (contains? (set* p1) x)))
 
         :not ; complement/none-of
         (fn [x]
           (and (if-not p1 true (not ((-invar-pred p1) x)))
                (if-not p2 true (not ((-invar-pred p2) x)))
-               (enc/revery?   #(not ((-invar-pred  %) x)) more)))
+               (revery?       #(not ((-invar-pred  %) x)) more)))
 
         :or ; any-of, (apply some-fn preds)
         (fn [x]
-          (or  (when p1 ((non-throwing (-invar-pred p1)) x))
-               (when p2 ((non-throwing (-invar-pred p2)) x))
-            (enc/rsome #((non-throwing (-invar-pred  %)) x) more)))
+          (or (when p1 ((non-throwing (-invar-pred p1)) x))
+              (when p2 ((non-throwing (-invar-pred p2)) x))
+              (rsome  #((non-throwing (-invar-pred  %)) x) more)))
 
         :and ; all-of, (apply every-pred preds)
         (fn [x]
           (and (if-not p1 true ((-invar-pred p1) x))
                (if-not p2 true ((-invar-pred p2) x))
-               (enc/revery?   #((-invar-pred  %) x) more)))))))
+               (revery?       #((-invar-pred  %) x) more)))))))
 
 (comment
   ((-invar-pred [:or nil? string?]) "foo")
@@ -59,8 +87,12 @@
   ;; * Clojure 1.7+'s `pr-str` dumps a ton of error info that we don't want here
   ([] (throw (ex-info "Invariant violation" {:invariant-violation? true})))
   ([assertion? ns-str ?line form val ?err ?data-fn]
-   (let [;; Cider unfortunately doesn't seem to print newlines in errors...
-         pattern     "Invariant violation in `%s:%s` [pred-form, val]:\n [%s, %s]"
+   (let [fmt-msg
+         (fn [x1 x2 x3 x4]
+           ;; Cider unfortunately doesn't seem to print newlines in errors
+           (str "Invariant violation in `" x1 ":" x2 "` [pred-form, val]:"
+                "\n [" x3 ", " x4 "]"))
+
          line-str    (or ?line "?")
          form-str    (str form)
          undefn-val? (= val -invar-undefined-val)
@@ -68,7 +100,7 @@
          dummy-err?  (:invariant-violation? (ex-data ?err))
          ?err        (when-not dummy-err? ?err)
          ?err-str    (when-let [e ?err] (str ?err) #_(pr-str ?err))
-         msg         (let [msg (format pattern ns-str line-str form-str val-str)]
+         msg         (let [msg (fmt-msg ns-str line-str form-str val-str)]
                        (cond
                          (not ?err)       msg
                          undefn-val? (str msg       "\n`val` error: " ?err-str)
@@ -80,7 +112,7 @@
        ;; Vestigial, we now prefer to just always throw `ex-info`s:
        ;; (if assertion? (-assertion-error msg) (ex-info msg {}))
        (ex-info msg
-         {:instant  (enc/now-udt)
+         {:dt       (now-dt)
           :ns       ns-str
           :?line    ?line
           :?form    (when-not (string? form) form)
@@ -97,7 +129,7 @@
   [assertion? truthy? line pred x ?data-fn]
   (let [;; form     (list pred x)
         form        (str (list pred x)) ; Better expansion gzipping
-        pred*       (if (vector? pred) (list 'taoensso.encore/-invar-pred pred) pred)
+        pred*       (if (vector? pred) (list 'taoensso.truss.impl/-invar-pred pred) pred)
         pass-result (if truthy? true '__x)]
 
     (if (list? x) ; x is a form; could throw on evaluation
@@ -181,121 +213,3 @@
                  (fn [~'__in] (-invariant1 ~assertion? ~truthy? ~line ~pred ~'__in ~?data-fn))
                  ~xs))
             ?xs))))))
-
-(comment
-  (qb 10000
-    (have  string? :in ["foo" "bar" "baz"])
-    (have? string? :in ["foo" "bar" "baz"]))
-
-  (macroexpand '(have string? 5))
-  (macroexpand '(have string? 5 :data "foo"))
-  (macroexpand '(have string? 5 :data (get-env)))
-  (let [x :x]   (have string? 5 :data (get-env)))
-
-  (have string? 5)
-  (have string? 5 :data {:a "a"})
-  (have string? 5 :data {:a (/ 5 0)})
-
-  (qb 100000
-    (have           string?  "foo")
-    (have [:or nil? string?] "foo"))
-
-  (qb 100000
-    (string? "foo")
-    (have string? "foo")
-    (have string? "foo" :data "bar")) ; [4.19 4.78 4.69]
-
-  ((fn [x] (let [a "a" b "b"] (have string? x :data {:env (get-env)}))) 5))
-
-(defmacro have
-  "Invariant/assertion utility.
-
-  Takes a pred and one or more vals. Tests pred against each val,
-  trapping errors. If any pred test fails, throws a detailed assertion error.
-  Otherwise returns input val/vals for convenient inline-use/binding.
-
-  Respects *assert* value so tests can be elided from production for zero
-  runtime costs.
-
-  Provides a small, simple, flexible alternative to tools like core.typed,
-  prismatic/schema, etc.
-
-    ;; Will throw a detailed error message on invariant violation:
-    (fn my-fn [x] (str/trim (have string? x)))
-
-  May attach arbitrary debug info to assertion violations like:
-    `(have string? x :data {:my-debug-info \"foo\" :env (get-env)})`
-
-  See also `have?`, `have!`."
-  {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
-  [& sigs] `(-invariant :assertion nil ~(:line (meta &form)) ~@sigs))
-
-(defmacro have?
-  "Like `have` but returns `true` on successful tests. This can be handy for use
-  with :pre/:post conditions. Compare:
-    (fn my-fn [x] {:post [(have  nil? %)]} nil) ; {:post [nil]} FAILS
-    (fn my-fn [x] {:post [(have? nil? %)]} nil) ; {:post [true]} passes as intended"
-  {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
-  [& sigs] `(-invariant :assertion :truthy ~(:line (meta &form)) ~@sigs))
-
-(defmacro have!
-  "Like `have` but ignores *assert* value (so can never be elided). Useful for
-  important conditions in production (e.g. security checks)."
-  {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
-  [& sigs] `(-invariant nil nil ~(:line (meta &form)) ~@sigs))
-
-(defmacro have!?
-  "A cross between `have?` and `have!`. Not used often but can be handy for
-  semantic clarification and/or to improve multi-val performance when the return
-  vals aren't necessary.
-
-  **WARNING**: Resist the temptation to use these in :pre/:post conds since
-  they're always subject to *assert* and will interfere with the intent of the
-  bang (`!`) here."
-  {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
-  [& sigs] `(-invariant :assertion :truthy ~(:line (meta &form)) ~@sigs))
-
-(comment
-  (qb 10000
-    (have!  string? :in ["a" "b" "c"])
-    (have!? string? :in ["a" "b" "c"])))
-
-(comment
-  (let [x 5]      (have    integer? x))
-  (let [x 5]      (have    string?  x))
-  (let [x 5]      (have :! string?  x))
-  (let [x 5 y  6] (have odd?  x x x y x))
-  (let [x 0 y :a] (have zero? x x x y x))
-  (have string? (do (println "eval1") "foo")
-                (do (println "eval2") "bar"))
-  (have number? (do (println "eval1") 5)
-                (do (println "eval2") "bar")
-                (do (println "eval3") 10))
-  (have nil? false)
-  (have nil)
-  (have false)
-  (have string? :in ["a" "b"])
-  (have string? :in (if true  ["a" "b"] [1 2]))
-  (have string? :in (if false ["a" "b"] [1 2]))
-  (have string? :in (mapv str (range 10)))
-  (have string? :in ["a" 1])
-  (have string? :in ["a" "b"] ["a" "b"])
-  (have string? :in ["a" "b"] ["a" "b" 1])
-  ((fn foo [x] {:pre [(have? integer? x)]} (* x x)) "foo")
-  (macroexpand '(have a))
-  (have? [:or nil? string?] "hello")
-  (macroexpand '(have? [:or nil? string?] "hello"))
-  (have? [:set>= #{:a :b}]    [:a :b :c])
-  (have? [:set<= [:a :b :c]] #{:a :b})
-
-  ;; HotSpot is great with these:
-  (qb 10000
-    (string? "a")
-    (have? "a")
-    (have string? "a" "b" "c")
-    (have? [:or nil? string?] "a" "b" "c")
-    (have? [:or nil? string?] "a" "b" "c" :data "foo"))
-  ;; [     5.59 26.48 45.82] ; 1st gen (macro form)
-  ;; [     3.31 13.48 36.22] ; 2nd gen (fn form)
-  ;; [0.82 1.75  7.57 27.05] ; 3rd gen (lean macro form)
-  )

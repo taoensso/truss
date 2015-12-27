@@ -3,7 +3,7 @@
 [More by @ptaoussanis] | **[CHANGELOG]** | [API] | current [Break Version] below:
 
 ```clojure
-[com.taoensso/truss "1.0.0-RC1"] ; Stable, TODO
+[com.taoensso/truss "1.0.0-SNAPSHOT"] ; Stable
 ```
 
 # Truss
@@ -15,7 +15,7 @@
 **Truss** is a micro library for Clojure/Script consisting of a single macro that provides fast, flexible **runtime condition assertions** with **great error messages**.
 
 ![Hero]
-	
+
 > A doubtful friend is worse than a certain enemy. Let a man be one thing or the other, and we then know how to meet him. - **Aesop**
 
 ## Quickstart
@@ -70,7 +70,7 @@ Specifically:
  * **Undocumented type assumptions** changing (used to be this thing was never nil; now it can be)
  * Documented **type assumptions going stale** (forgot to update comments)
  * **Unhelpful error messages** when a type assumption is inevitably violated (it crashed in production? why?)
- 
+
 Thankfully, this list is almost exhaustive; in my experience these few causes often account for **80%+ of real-world incidental difficulty**.
 
 So **Truss** targets these issues with a **practical 80% solution** that emphasizes:
@@ -91,11 +91,11 @@ Having the freedom to reinforce code only **where and when you judge it worthwhi
  4. Allows you to retain control over long-term cost/benefit trade-offs
 
 ## Detailed usage guide
- 
+
 Add the necessary dependency to your project:
 
 ```clojure
-[com.taoensso/truss "1.0.0-RC1"]
+[com.taoensso/truss "1.0.0-SNAPSHOT"]
 ```
 
 And setup your namespace imports:
@@ -110,7 +110,7 @@ And setup your namespace imports:
    [taoensso.truss :as truss :refer (have have! have?)]))
 ```
 
-And you're good to go - see the examples below for usage ideas.
+And you're good to go - see the examples below (or [here](https://github.com/ptaoussanis/truss/blob/master/src/taoensso/truss/examples.cljc)) for usage ideas.
 
 ----
 

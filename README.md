@@ -3,7 +3,7 @@
 [More by @ptaoussanis] | **[CHANGELOG]** | [API] | current [Break Version] below:
 
 ```clojure
-[com.taoensso/truss "1.0.0-RC1"] ; Stable
+[com.taoensso/truss "1.0.0-RC2"] ; Stable
 ```
 
 # Truss
@@ -94,7 +94,7 @@ Having the freedom to reinforce code only **where and when you judge it worthwhi
 Add the necessary dependency to your project:
 
 ```clojure
-[com.taoensso/truss "1.0.0-RC1"]
+[com.taoensso/truss "1.0.0-RC2"]
 ```
 
 And setup your namespace imports:

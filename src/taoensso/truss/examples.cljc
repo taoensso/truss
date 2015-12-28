@@ -14,8 +14,7 @@
 (square nil) ; =>
 ;; Invariant violation in `taoensso.truss.examples:11` [pred-form, val]:
 ;; [(integer? n), <nil>]
-;; {:?form nil,
-;;  :instant 1450937904762,
+;; {:instant 1450937904762,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
 ;;  :val nil,
@@ -42,8 +41,7 @@
 (have string? 42) ; =>
 ;; Invariant violation in `taoensso.truss.examples:44` [pred-form, val]:
 ;; [(string? 42), 42]
-;; {:?form nil,
-;;  :instant 1450937836680,
+;; {:instant 1450937836680,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
 ;;  :val 42,
@@ -59,8 +57,7 @@
 ;; Invariant violation in `taoensso.truss.examples:59` [pred-form, val]:
 ;; [(string? (/ 1 0)), <undefined>]
 ;; `val` error: java.lang.ArithmeticException: Divide by zero
-;; {:?form nil,
-;;  :instant 1450938025898,
+;; {:instant 1450938025898,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
 ;;  :val undefined/threw-error,
@@ -90,8 +87,7 @@
   (str x y z)) ; =>
   ;; Invariant violation in `taoensso.truss.examples:91` [pred-form, val]:
 ;; [(string? 42), 42]
-;; {:?form nil,
-;;  :instant 1450938267043,
+;; {:instant 1450938267043,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
 ;;  :val 42,
@@ -113,8 +109,7 @@
 (my-handler {:foo :bar} 5 nil) ; =>
 ;; Invariant violation in `taoensso.truss.examples:146` [pred-form, val]:
 ;; [(integer? y), <nil>]
-;; {:?form nil,
-;;  :instant 1450939196719,
+;; {:instant 1450939196719,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
 ;;  :val nil,
@@ -171,6 +166,7 @@
 
 ;; Element of
 (have [:el #{:a :b :c :d}] :b) ; => :b
+(have [:el #{:a :b :c :d}] :e) ; => Error
 
 ;; Superset
 (have [:set>= #{:a :b}] #{:a :b :c}) ; => #{:a :b :c}

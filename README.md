@@ -35,8 +35,7 @@ This one example covers **most of the Truss API**:
 (square nil) ; =>
 ;; Invariant violation in `taoensso.truss.examples:11` [pred-form, val]:
 ;; [(integer? n), <nil>]
-;; {:?form nil,
-;;  :instant 1450937904762,
+;; {:instant 1450937904762,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
 ;;  :val nil,
@@ -90,7 +89,7 @@ Having the freedom to reinforce code only **where and when you judge it worthwhi
  3. Eliminates upfront buy-in costs
  4. Allows you to retain control over long-term cost/benefit trade-offs
 
-## Detailed usage guide
+## Detailed usage
 
 Add the necessary dependency to your project:
 
@@ -112,8 +111,6 @@ And setup your namespace imports:
 
 And you're good to go - see the examples below (or [here](https://github.com/ptaoussanis/truss/blob/master/src/taoensso/truss/examples.cljc)) for usage ideas.
 
-----
-
 ### Examples: inline assertions and bindings
 
 ```clojure
@@ -128,8 +125,7 @@ And you're good to go - see the examples below (or [here](https://github.com/pta
 (have string? 42) ; =>
 ;; Invariant violation in `taoensso.truss.examples:44` [pred-form, val]:
 ;; [(string? 42), 42]
-;; {:?form nil,
-;;  :instant 1450937836680,
+;; {:instant 1450937836680,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
 ;;  :val 42,
@@ -145,8 +141,7 @@ And you're good to go - see the examples below (or [here](https://github.com/pta
 ;; Invariant violation in `taoensso.truss.examples:59` [pred-form, val]:
 ;; [(string? (/ 1 0)), <undefined>]
 ;; `val` error: java.lang.ArithmeticException: Divide by zero
-;; {:?form nil,
-;;  :instant 1450938025898,
+;; {:instant 1450938025898,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
 ;;  :val undefined/threw-error,
@@ -176,8 +171,7 @@ And you're good to go - see the examples below (or [here](https://github.com/pta
   (str x y z)) ; =>
   ;; Invariant violation in `taoensso.truss.examples:91` [pred-form, val]:
 ;; [(string? 42), 42]
-;; {:?form nil,
-;;  :instant 1450938267043,
+;; {:instant 1450938267043,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
 ;;  :val 42,
@@ -201,8 +195,7 @@ You can attach arbitrary debug data to be displayed on violations.
 (my-handler {:foo :bar} 5 nil) ; =>
 ;; Invariant violation in `taoensso.truss.examples:146` [pred-form, val]:
 ;; [(integer? y), <nil>]
-;; {:?form nil,
-;;  :instant 1450939196719,
+;; {:instant 1450939196719,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
 ;;  :val nil,
@@ -260,6 +253,7 @@ Truss offers some shorthands for your convenience. **These are all optional**: t
 
 ;; Element of
 (have [:el #{:a :b :c :d}] :b) ; => :b
+(have [:el #{:a :b :c :d}] :e) ; => Error
 
 ;; Superset
 (have [:set>= #{:a :b}] #{:a :b :c}) ; => #{:a :b :c}

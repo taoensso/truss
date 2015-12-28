@@ -113,9 +113,9 @@
        ;; (if assertion? (-assertion-error msg) (ex-info msg {}))
        (ex-info msg
          {:dt       (now-dt)
-          :ns       ns-str
+          :ns-str   ns-str
           :?line    ?line
-          :?form    (when-not (string? form) form)
+          ;; :?form (when-not (string? form) form)
           :form-str form-str
           :val      (if undefn-val? 'undefined/threw-error val)
           :val-type (if undefn-val? 'undefined/threw-error (type val))

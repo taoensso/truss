@@ -1,7 +1,7 @@
 (ns taoensso.truss.examples
   {:author "Peter Taoussanis (@ptaoussanis)"}
-  #?(:clj  (:require        [taoensso.truss :as truss :refer (have have! have?)])
-     :cljs (:require-macros [taoensso.truss :as truss :refer (have have! have?)])))
+  #?(:clj  (:require [taoensso.truss :as truss :refer        (have have! have?)])
+     :cljs (:require [taoensso.truss :as truss :refer-macros (have have! have?)])))
 
 ;;;; First API example
 
@@ -119,6 +119,46 @@
 ;;  :?data {:ring-req {:foo :bar}}, ; <--- This got included
 ;;  :?line 146,
 ;;  :form-str "(integer? y)"}
+)
+
+;;;; Attaching dynamic debug data
+
+(comment
+(defn wrap-ring-dynamic-assertion-data
+  "Returns Ring handler wrapped so that assertion violation errors in handler
+  will include `(data-fn <ring-req>)` as debug data."
+  [data-fn ring-handler-fn]
+  (fn [ring-req]
+    (truss/with-dynamic-assertion-data (data-fn ring-req)
+      (ring-handler-fn ring-req))))
+
+(defn ring-handler [ring-req]
+  (have? string? 42) ; Will always fail
+  {:status 200 :body "Done"})
+
+(def wrapped-ring-handler
+  (wrap-ring-dynamic-assertion-data
+    ;; Include Ring session with all handler's assertion errors:
+    (fn data-fn [ring-req] {:ring-session (:session ring-req)})
+    ring-handler))
+
+(comment
+  (wrapped-ring-handler
+    {:method :get :uri "/" :session {:user-name "Stu"}}) ; =>
+   ;; Invariant violation in `taoensso.truss.examples:136` [pred-form, val]:
+   ;; [(string? 42), 42]
+   ;; {:*?data* {:ring-session {:user-name "Stu"}}, ; <--- This got included
+   ;;  :elidable? true,
+   ;;  :dt #inst "2015-12-28T05:57:49.759-00:00",
+   ;;  :val 42,
+   ;;  :ns-str "taoensso.truss.examples",
+   ;;  :val-type java.lang.Long,
+   ;;  :?err nil,
+   ;;  :*assert* true,
+   ;;  :?data nil,
+   ;;  :?line 136,
+   ;;  :form-str "(string? 42)"}
+  )
 )
 
 ;;;; Assertions within data structures

@@ -6,6 +6,8 @@
 
 (comment (require '[taoensso.encore :as enc :refer (qb)]))
 
+;;;; Core API
+
 (defmacro have
   "Takes a pred and one or more vals. Tests pred against each val,
   trapping errors. If any pred test fails, throws a detailed assertion error.
@@ -108,3 +110,16 @@
   ((fn [x]
      (let [a "a" b "b"]
        (have string? x :data {:env (enc/get-env)}))) 5))
+
+;;;; Utils
+
+(defn get-dynamic-assertion-data
+  "Returns current value of dynamic assertion data"
+  [] impl/*-?data*)
+
+(defmacro with-dynamic-assertion-data
+  "Executes body with dynamic assertion data bound to given value.
+  This data will be included in any violation errors thrown by body."
+  [data & body] `(binding [impl/*-?data* ~data] ~@body))
+
+(comment (with-dynamic-assertion-data "foo" (have string? 5 :data "bar")))

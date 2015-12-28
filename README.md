@@ -105,8 +105,8 @@ And setup your namespace imports:
    [taoensso.truss :as truss :refer (have have! have?)]))
 
 (ns my-cljs ; ClojureScript namespace
-  (:require-macros
-   [taoensso.truss :as truss :refer (have have! have?)]))
+  (:require
+   [taoensso.truss :as truss :refer-macros (have have! have?)]))
 ```
 
 And you're good to go - see the examples below (or [here](https://github.com/ptaoussanis/truss/blob/master/src/taoensso/truss/examples.cljc)) for usage ideas.
@@ -185,7 +185,7 @@ And you're good to go - see the examples below (or [here](https://github.com/pta
 
 ### Examples: attaching debug data
 
-You can attach arbitrary debug data to be displayed on violations.
+You can attach arbitrary debug data to be displayed on violations:
 
 ```clojure
 (defn my-handler [ring-req x y]
@@ -207,6 +207,48 @@ You can attach arbitrary debug data to be displayed on violations.
 ;;  :form-str "(integer? y)"}
 ```
 
+### Examples: attaching dynamic debug data
+
+And you can attach shared debug data at the `binding` level:
+
+```clojure
+(defn wrap-ring-dynamic-assertion-data
+  "Returns Ring handler wrapped so that assertion violation errors in handler
+  will include `(data-fn <ring-req>)` as debug data."
+  [data-fn ring-handler-fn]
+  (fn [ring-req]
+    (truss/with-dynamic-assertion-data (data-fn ring-req)
+      (ring-handler-fn ring-req))))
+
+(defn ring-handler [ring-req]
+  (have? string? 42) ; Will always fail
+  {:status 200 :body "Done"})
+
+(def wrapped-ring-handler
+  (wrap-ring-dynamic-assertion-data
+    ;; Include Ring session with all handler's assertion errors:
+    (fn data-fn [ring-req] {:ring-session (:session ring-req)})
+    ring-handler))
+
+(comment
+  (wrapped-ring-handler
+    {:method :get :uri "/" :session {:user-name "Stu"}}) ; =>
+   ;; Invariant violation in `taoensso.truss.examples:136` [pred-form, val]:
+   ;; [(string? 42), 42]
+   ;; {:*?data* {:ring-session {:user-name "Stu"}}, ; <--- This got included
+   ;;  :elidable? true,
+   ;;  :dt #inst "2015-12-28T05:57:49.759-00:00",
+   ;;  :val 42,
+   ;;  :ns-str "taoensso.truss.examples",
+   ;;  :val-type java.lang.Long,
+   ;;  :?err nil,
+   ;;  :*assert* true,
+   ;;  :?data nil,
+   ;;  :?line 136,
+   ;;  :form-str "(string? 42)"}
+  )
+```
+
 ### Examples: assertions within data structures
 
 ```clojure
@@ -217,7 +259,7 @@ You can attach arbitrary debug data to be displayed on violations.
 
 ### Examples: assertions within :pre/:post conditions
 
-As you'd expect, just make sure to use the `have?` variant which always returns a truthy val on success.
+Just make sure to use the `have?` variant which always returns a truthy val on success:
 
 ```clojure
 (defn square [n]
@@ -233,7 +275,7 @@ As you'd expect, just make sure to use the `have?` variant which always returns 
 
 ### Examples: special predicates
 
-Truss offers some shorthands for your convenience. **These are all optional**: the same effect can always be achieved with an equivalent predicate fn.
+Truss offers some shorthands for your convenience. **These are all optional**: the same effect can always be achieved with an equivalent predicate fn:
 
 ```clojure
 ;; A predicate can be anything

@@ -38,6 +38,8 @@
 
 ;;;; Truss
 
+(def ^:dynamic *-?data* nil)
+
 (defn- non-throwing [pred] (fn [x] (catch-errors* (pred x) _ nil)))
 (defn -invar-pred
   "Predicate shorthand transformations for convenience"
@@ -119,7 +121,8 @@
           :form-str form-str
           :val      (if undefn-val? 'undefined/threw-error val)
           :val-type (if undefn-val? 'undefined/threw-error (type val))
-          :?data    ?data ; Arbitrary user data, handy for debugging
+          :?data      ?data  ; Arbitrary user data, handy for debugging
+          :*?data*  *-?data* ; ''
           :?err     ?err
           :*assert* *assert*
           :elidable? assertion?})))))

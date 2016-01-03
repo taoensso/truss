@@ -392,7 +392,22 @@ Personally, I tend to favour Truss when possible because an assertion:
   3. Tends to be quicker to write and keep up-to-date than a test
   4. Offers runtime protection
 
-#### How does this compare to gradual typing / [core.typed]?
+#### Any related/similar/alternative libraries you could recommend?
+
+Confession: I wrote the first versions of Truss back in 2012. Since it satisfied my own needs, haven't really spent much time since then looking too closely at any alternatives that have popped up in the meantime.
+
+Of the libs listed here, core.typed's the only one I have any experience with so really not qualified to compare these in any meaningful way.
+
+Would **definitely** encourage interested folks to take a good look at all available tools, to experiment, and to find the option/s that best suit your particular goals and preferred work style.
+
+Link                        | Description
+--------------------------- | --------------------------------------------------
+[core.typed]                | An optional type system for Clojure
+[@prismatic/schema]         | Clojure(Script) library for declarative data description and validation
+[@marick/structural-typing] | Structural typing for Clojure, somewhat inspired by Elm
+Your link here?             | **PR's welcome!**
+
+#### So how does Truss compare to gradual typing / [core.typed]?
 
 Typed Clojure is _awesome_ and something I'd definitely recommend considering. As with all type systems though, it necessarily provides trade-offs.
 
@@ -409,19 +424,6 @@ Some of the challenges I've noticed with gradual typing:
 To be clear: there's absolutely times when gradual typing provides a wonderful fit. Indeed, I've found the practical overlap between core.typed and Truss small and the two often complimentary.
 
 Experiment, weigh your options, choose whatever makes sense for your team and objectives.
-
-#### How does this compare to [@prismatic/schema]?
-
-Confession: I wrote Truss before Schema was published so I've never actually used it or looked at it too closely.
-
-Some superficial observations from looking at the README now:
-
-  1. Goals seem to be a superset of Truss? (incl. coersions, etc.)
-  2. Seems to be more declarative (separates structure from validation calls)
-  3. Seems to be more concerned with types than general (predicate) conditions?
-  4. Codebase and API both seem significantly more extensive?
-
-Would definitely encourage checking it out if you haven't!
 
 #### Why isn't there something like this for \<other programming language\>?
 
@@ -468,4 +470,5 @@ Copyright &copy; 2015 [Peter Taoussanis].
 <!--- Unique links -->
 [core.typed]: https://github.com/clojure/core.typed
 [@prismatic/schema]: https://github.com/Prismatic/schema
+[@marick/structural-typing]: https://github.com/marick/structural-typing/
 [challenges]: #challenges

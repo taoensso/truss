@@ -10,6 +10,9 @@
   (let [n (have integer? n)]
     (* n n)))
 
+;; This returns n if it satisfies (integer? n), otherwise it throws a clear error:
+;; (have integer? n)
+
 (square 5)   ; => 25
 (square nil) ; =>
 ;; Invariant violation in `taoensso.truss.examples:11` [pred-form, val]:
@@ -225,17 +228,18 @@
 ;; A custom predicate:
 (defn pos-int? [x] (and (integer? x) (pos? x)))
 
-(defn have-valid-person
+(defn have-person
   "Returns given arg if it's a valid `person`, otherwise throws an error"
   [person]
-  (truss/with-dynamic-assertion-data {:person person}
+  (truss/with-dynamic-assertion-data {:person person} ; (Optional) setup some extra debug data
     (have? map? person)
-    (have? [:ks>= #{:age :name :job}] person)
+    (have? [:ks>= #{:age :name}] person)
     (have? [:or nil? pos-int?] (:age person)))
-  person)
+  person ; Return input if nothing's thrown
+  )
 
-(have-valid-person {:name "Steve" :age 33})   ; => {:name "Steve", :age 33}
-(have-valid-person {:name "Alice" :age "33"}) ; => Error
+(have-person {:name "Steve" :age 33})   ; => {:name "Steve", :age 33}
+(have-person {:name "Alice" :age "33"}) ; => Error
 )
 
 ;;;; Assertions without elision

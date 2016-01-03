@@ -218,6 +218,26 @@
 (have [:ks-nnil? #{:a :b}] {:a "A" :b nil :c "C"}) ; => Error
 )
 
+;;;; Writing custom validators
+
+(comment
+
+;; A custom predicate:
+(defn pos-int? [x] (and (integer? x) (pos? x)))
+
+(defn have-valid-person
+  "Returns given arg if it's a valid `person`, otherwise throws an error"
+  [person]
+  (truss/with-dynamic-assertion-data {:person person}
+    (have? map? person)
+    (have? [:ks>= #{:age :name :job}] person)
+    (have? [:or nil? pos-int?] (:age person)))
+  person)
+
+(have-valid-person {:name "Steve" :age 33})   ; => {:name "Steve", :age 33}
+(have-valid-person {:name "Alice" :age "33"}) ; => Error
+)
+
 ;;;; Assertions without elision
 
 (comment

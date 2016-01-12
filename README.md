@@ -12,11 +12,15 @@
 
 **Truss** is a **micro library** for Clojure/Script consisting of a single macro that provides fast, flexible **runtime condition assertions** with **great error messages**.
 
-**TODO**: embed intro talk/demo video (ETA: Jan 2016)
-
 ![Hero]
 
 > A doubtful friend is worse than a certain enemy. Let a man be one thing or the other, and we then know how to meet him. - **Aesop**
+
+## Introduction (Jan 2016 talk)
+
+<p><a href="https://youtu.be/gMB4Y-EIArA" target="_blank" title="See Truss talk on YouTube">
+<img src="https://raw.githubusercontent.com/ptaoussanis/truss/master/talk.png" width="600px"/>
+</a></p>
 
 ## Quickstart
 
@@ -24,7 +28,7 @@ Truss uses a simple `(predicate arg)` pattern that should **immediately feel fam
 
 ```clojure
 (defn square [n]
-  (let [n (have integer? n)]
+  (let [n (have integer? n)] ; <- Truss assertion
     (* n n)))
 
 ;; This returns n if it satisfies (integer? n), otherwise it throws a clear error:
@@ -46,7 +50,7 @@ Truss uses a simple `(predicate arg)` pattern that should **immediately feel fam
 ;;  :form-str "(integer? n)"}
 ```
 
-##### And that's it, you know the Truss API.
+#### And that's it, you know the Truss API.
 
 The `(have integer? <arg>)` annotation is a standard Clojure form that both **documents the intention of the code** in a way that **cannot go stale**, and provides a **runtime check** that throws a detailed error message on any unexpected violation.
 

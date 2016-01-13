@@ -1,4 +1,7 @@
-[More by @ptaoussanis] | **[CHANGELOG]** | [API] | current [Break Version] below:
+<a href="https://www.taoensso.com" title="More stuff by @ptaoussanis at www.taoensso.com">
+<img src="https://www.taoensso.com/taoensso-open-source.png" alt="Taoensso open-source" width="400"/></a>
+
+**[CHANGELOG]** | [API] | current [Break Version]:
 
 ```clojure
 [com.taoensso/truss "1.0.0"] ; Stable
@@ -6,29 +9,49 @@
 
 # Truss
 
-### An opinionated assertions API for Clojure/Script
+### Great Clojure/Script error messages where you need them most
 
-**Or**: Wait, are we sure that's always a string?
+**Or**: Wait, are we sure that's always a non-empty vector?
 
-**Truss** is a **micro library** for Clojure/Script consisting of a single macro that provides fast, flexible **runtime condition assertions** with **great error messages**.
+**Or**: A lightweight alternative to [core.typed], [@plumatic/Schema], etc.
+
+**Truss** is a **micro library** for Clojure/Script consisting of a single assertion macro that provides fast, flexible **runtime condition assertions** with **great error messages**.
 
 ![Hero]
 
 > A doubtful friend is worse than a certain enemy. Let a man be one thing or the other, and we then know how to meet him. - **Aesop**
 
-## Introduction (Jan 2016 talk)
+## Features
 
-<p><a href="https://youtu.be/gMB4Y-EIArA" target="_blank" title="See Truss talk on YouTube">
-<img src="https://raw.githubusercontent.com/ptaoussanis/truss/master/talk.png" width="600px"/>
-</a></p>
+ * **Tiny** cross-platform codebase with **zero external dependencies**
+ * Trivial to understand and use
+ * Use **just** when+where you need it (**incl. libraries**)
+ * Minimal (or zero) runtime performance cost
+ * A practical **80% solution** (focus on **improving error messages**)
 
 ## Quickstart
+
+Add the necessary dependency to your project:
+
+```clojure
+[com.taoensso/truss "1.0.0"]
+```
+
+And setup your namespace imports:
+
+```clojure
+(ns my-clj-ns ; Clojure namespace
+  (:require [taoensso.truss :as truss :refer (have have! have?)]))
+
+(ns my-cljs-ns ; ClojureScript namespace
+  (:require [taoensso.truss :as truss :refer-macros (have have! have?)]))
+```
 
 Truss uses a simple `(predicate arg)` pattern that should **immediately feel familiar** to Clojure users:
 
 ```clojure
 (defn square [n]
-  (let [n (have integer? n)] ; <- Truss assertion
+  (let [n (have integer? n)] ; <- A Truss assertion
     (* n n)))
 
 ;; This returns n if it satisfies (integer? n), otherwise it throws a clear error:
@@ -52,16 +75,23 @@ Truss uses a simple `(predicate arg)` pattern that should **immediately feel fam
 
 #### And that's it, you know the Truss API.
 
-The `(have integer? <arg>)` annotation is a standard Clojure form that both **documents the intention of the code** in a way that **cannot go stale**, and provides a **runtime check** that throws a detailed error message on any unexpected violation.
+The `(have <pred> <arg>)` annotation is a standard Clojure form that both **documents the intention of the code** in a way that **cannot go stale**, and provides a **runtime check** that throws a detailed error message on any unexpected violation.
 
-## Features
+### When to use a Truss assertion
 
- * Tiny cross-platform codebase with zero external dependencies
- * Trivial to understand and use
- * Easy to adopt just when+where you need it
- * Minimal-to-zero runtime performance cost
+You use Truss to **formalize assumptions** that you have about your data (e.g. **function arguments**, **intermediate values**, or **current application state** at some point in your execution flow).
+
+So any time you find yourself making **implementation choices based on implicit information** (e.g. the state your application should be in if this code is running) - that's when you might want to reach for Truss instead of a comment or Clojure assertion.
+
+Use Truss assertions like **salt in good cooking**; a little can go a long way.
 
 ## Motivation
+
+> Feel free to skim/skip this section :-)
+
+<a href="https://youtu.be/gMB4Y-EIArA" title="Truss talk (YouTube)">
+<img src="https://raw.githubusercontent.com/ptaoussanis/truss/master/talk.jpg" width="600"/>
+</a>
 
 Clojure is a beautiful language full of smart trade-offs that tends to produce production code that's short, simple, and easy to understand.
 
@@ -94,29 +124,19 @@ Having the freedom to reinforce code only **where and when you judge it worthwhi
  3. Eliminates upfront buy-in costs
  4. Allows you to retain control over long-term cost/benefit trade-offs
 
-## Detailed usage
+<a id="detailed-usage"/>
 
-Add the necessary dependency to your project:
+## Examples!
 
-```clojure
-[com.taoensso/truss "1.0.0"]
-```
+> All examples are from [`src/taoensso/truss/examples.cljc`](https://github.com/ptaoussanis/truss/blob/master/src/taoensso/truss/examples.cljc)
 
-And setup your namespace imports:
+Truss's sweet spot is often in longer, complex code (difficult to show here). So these examples are mostly examples of **syntax**, not **use case**. In particular, they mostly focus on simple **argument type assertions** since those are the easiest to understand.
 
-```clojure
-(ns my-clj-ns ; Clojure namespace
-  (:require
-   [taoensso.truss :as truss :refer (have have! have?)]))
+In practice, you'll often find more value from assertions about your **application state** or **intermediate `let` values** _within_ a larger piece of code.
 
-(ns my-cljs ; ClojureScript namespace
-  (:require
-   [taoensso.truss :as truss :refer-macros (have have! have?)]))
-```
+### Inline assertions and bindings
 
-And you're good to go - see the examples below (or [here](https://github.com/ptaoussanis/truss/blob/master/src/taoensso/truss/examples.cljc)) for usage ideas.
-
-### Example: inline assertions and bindings
+A Truss `(have <pred> <arg>)` form will either throw or return the given argument. This lets you use these forms within other expressions and within `let` bindings, etc.
 
 ```clojure
 ;; You can add an assertion inline
@@ -164,7 +184,7 @@ And you're good to go - see the examples below (or [here](https://github.com/pta
 ;;  :form-str "(string? (/ 1 0))"}
 ```
 
-### Example: destructured bindings
+### Destructured bindings
 
 ```clojure
 ;; You can assert against multipe args at once
@@ -188,7 +208,7 @@ And you're good to go - see the examples below (or [here](https://github.com/pta
 ;;  :form-str "(string? 42)"}
 ```
 
-### Example: attaching debug data
+### Attaching debug data
 
 You can attach arbitrary debug data to be displayed on violations:
 
@@ -212,7 +232,7 @@ You can attach arbitrary debug data to be displayed on violations:
 ;;  :form-str "(integer? y)"}
 ```
 
-### Example: attaching dynamic debug data
+### Attaching dynamic debug data
 
 And you can attach shared debug data at the `binding` level:
 
@@ -254,7 +274,7 @@ And you can attach shared debug data at the `binding` level:
   )
 ```
 
-### Example: assertions within data structures
+### Assertions within data structures
 
 ```clojure
 ;;; Compare
@@ -262,7 +282,7 @@ And you can attach shared debug data at the `binding` level:
 (have keyword? :in [:a :b :c]) ; => [:a :b :c]
 ```
 
-### Example: assertions within :pre/:post conditions
+### Assertions within :pre/:post conditions
 
 Just make sure to use the `have?` variant which always returns a truthy val on success:
 
@@ -278,7 +298,7 @@ Just make sure to use the `have?` variant which always returns a truthy val on s
 (square nil) ; => 1
 ```
 
-### Example: special predicates
+### Special predicates
 
 Truss offers some shorthands for your convenience. **These are all optional**: the same effect can always be achieved with an equivalent predicate fn:
 
@@ -312,7 +332,7 @@ Truss offers some shorthands for your convenience. **These are all optional**: t
 (have [:ks-nnil? #{:a :b}] {:a "A" :b nil :c "C"}) ; => Error
 ```
 
-### Example: writing custom validators
+### Writing custom validators
 
 No need for any special syntax or concepts, just define a function as you'd like:
 
@@ -419,7 +439,7 @@ Would **definitely** encourage interested folks to take a good look at all the t
 Link                        | Description
 --------------------------- | --------------------------------------------------
 [core.typed]                | An optional type system for Clojure
-[@prismatic/schema]         | Clojure(Script) library for declarative data description and validation
+[@plumatic/schema]         | Clojure(Script) library for declarative data description and validation
 [@marick/structural-typing] | Structural typing for Clojure by the creator of [Midje], somewhat inspired by Elm
 
 #### How does Truss compare to gradual typing / [core.typed]?
@@ -465,7 +485,7 @@ Otherwise, you can reach me at [Taoensso.com]. Happy hacking!
 ## License
 
 Distributed under the [EPL v1.0] \(same as Clojure).  
-Copyright &copy; 2015, 2016 [Peter Taoussanis].
+Copyright &copy; 2015-2016 [Peter Taoussanis].
 
 <!--- Standard links -->
 [Taoensso.com]: https://www.taoensso.com
@@ -484,7 +504,7 @@ Copyright &copy; 2015, 2016 [Peter Taoussanis].
 
 <!--- Unique links -->
 [core.typed]: https://github.com/clojure/core.typed
-[@prismatic/schema]: https://github.com/Prismatic/schema
+[@plumatic/schema]: https://github.com/plumatic/schema
 [@marick/structural-typing]: https://github.com/marick/structural-typing/
 [Midje]: https://github.com/marick/Midje
 [challenges]: #challenges

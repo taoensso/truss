@@ -40,60 +40,80 @@
 
 (def ^:dynamic *-?data* nil)
 
-(defn non-throwing [pred] (fn [x] (catch-errors* (pred x) _ nil)))
+(defn  non-throwing [pred] (fn [x] (catch-errors* (pred x) _ nil)))
+(defn- non-throwing?
+  "Returns true for some common preds that are naturally non-throwing"
+  [p]
+  #+cljs false ; Would need `resolve`; other ideas?
+  #+clj
+  (or
+    (keyword? p)
+    (boolean
+      (#{nil? #_some? string? integer? number? keyword? float?
+         set? vector? coll? list? ifn? fn? associative? sequential?
+         sorted? counted? reversible?}
+        (if (symbol? p) (resolve p) p)))))
 
-(def -invar-pred
-  "Predicate shorthand transformations for convenience"
-  (fn self [pred-form]
-    (if-not (vector? pred-form)
-      pred-form
-      (let [[type a1 a2 a3] pred-form]
-        (assert a1 "Special predicate [<special-type> <arg>] form w/o <arg>")
-        (case type
-          :set=             `(fn [~'__x] (=             (set* ~'__x) (set* ~a1)))
-          :set<=            `(fn [~'__x] (set/subset?   (set* ~'__x) (set* ~a1)))
-          :set>=            `(fn [~'__x] (set/superset? (set* ~'__x) (set* ~a1)))
-          :ks=              `(fn [~'__x] (ks=      ~a1 ~'__x))
-          :ks<=             `(fn [~'__x] (ks<=     ~a1 ~'__x))
-          :ks>=             `(fn [~'__x] (ks>=     ~a1 ~'__x))
-          :ks-nnil?         `(fn [~'__x] (ks-nnil? ~a1 ~'__x))
-          (    :el     :in) `(fn [~'__x]      (contains? (set* ~a1) ~'__x))
-          (:not-el :not-in) `(fn [~'__x] (not (contains? (set* ~a1) ~'__x)))
+(defn -xpred
+  "Expands any special predicate forms and returns [<expanded-pred> <non-throwing?>]"
+  [pred]
+  (if-not (vector? pred)
+    [pred (non-throwing? pred)]
+    (let [[type a1 a2 a3] pred]
+      (assert a1 "Special predicate [<special-type> <arg>] form w/o <arg>")
+      (case type
+        :set=             [`(fn [~'__x] (=             (set* ~'__x) (set* ~a1))) false]
+        :set<=            [`(fn [~'__x] (set/subset?   (set* ~'__x) (set* ~a1))) false]
+        :set>=            [`(fn [~'__x] (set/superset? (set* ~'__x) (set* ~a1))) false]
+        :ks=              [`(fn [~'__x] (ks=      ~a1 ~'__x)) false]
+        :ks<=             [`(fn [~'__x] (ks<=     ~a1 ~'__x)) false]
+        :ks>=             [`(fn [~'__x] (ks>=     ~a1 ~'__x)) false]
+        :ks-nnil?         [`(fn [~'__x] (ks-nnil? ~a1 ~'__x)) false]
+        (    :el     :in) [`(fn [~'__x]      (contains? (set* ~a1) ~'__x))  false]
+        (:not-el :not-in) [`(fn [~'__x] (not (contains? (set* ~a1) ~'__x))) false]
 
-          :and ; all-of, (apply every-pred preds)
-          (cond
-            a3 `(fn [~'__x] (and (~(self a1) ~'__x) (~(self a2) ~'__x) (~(self a3) ~'__x)))
-            a2 `(fn [~'__x] (and (~(self a1) ~'__x) (~(self a2) ~'__x)))
-            a1 (self a1))
+        ;; Pred composition
+        (let [self (fn [?pred] (when ?pred (-xpred ?pred)))
 
-          :or  ; any-of, (apply some-fn preds)
-          (cond
-            a3 `(fn [~'__x] (or ((non-throwing ~(self a1)) ~'__x) ((non-throwing ~(self a2)) ~'__x) (~(self a3) ~'__x)))
-            a2 (if (or (= a1 nil?) (= a2 nil?)) ; Common case
-                 `(fn [~'__x] (or (~(self a1) ~'__x) (~(self a2) ~'__x)))
-                 `(fn [~'__x] (or ((non-throwing ~(self a1)) ~'__x) (~(self a2) ~'__x))))
-            a1 (self a1))
+              ;; Support recursive expansion:
+              [[a1 nt-a1?] [a2 nt-a2?] [a3 nt-a3?]] [(self a1) (self a2) (self a3)]
 
-          :not ; complement/none-of
-          (cond
-            a3 `(fn [~'__x] (and (not (~(self a1) ~'__x)) (not (~(self a2) ~'__x)) (not (~(self a3) ~'__x))))
-            a2 `(fn [~'__x] (and (not (~(self a1) ~'__x)) (not (~(self a2) ~'__x))))
-            a1 `(fn [~'__x] (not ~(self a1)))))))))
+              nt-a1    (when a1 (if nt-a1? a1 `(non-throwing ~a1)))
+              nt-a2    (when a2 (if nt-a2? a2 `(non-throwing ~a2)))
+              nt-a3    (when a3 (if nt-a3? a3 `(non-throwing ~a3)))
+              nt-comp? (cond a3 (and nt-a1? nt-a2? nt-a3?)
+                             a2 (and nt-a1? nt-a2?)
+                             a1 nt-a1?)]
+
+          (case type
+            :and ; all-of
+            (cond
+              a3 [`(fn [~'__x] (and (~a1 ~'__x) (~a2 ~'__x) (~a3 ~'__x))) nt-comp?]
+              a2 [`(fn [~'__x] (and (~a1 ~'__x) (~a2 ~'__x))) nt-comp?]
+              a1 [a1 nt-a1?])
+
+            :or  ; any-of
+            (cond
+              a3 [`(fn [~'__x] (or (~nt-a1 ~'__x) (~nt-a2 ~'__x) (~nt-a3 ~'__x))) true]
+              a2 [`(fn [~'__x] (or (~nt-a1 ~'__x) (~nt-a2 ~'__x))) true]
+              a1 [a1 nt-a1?])
+
+            :not ; complement/none-of
+            ;; Note that it's a little ambiguous whether we'd want non-throwing
+            ;; behaviour here or not so choosing to interpret throws as
+            ;; undefined to minimize surprise
+            (cond
+              a3 [`(fn [~'__x] (not (or (~a1 ~'__x) (~a2 ~'__x) (~a3 ~'__x)))) nt-comp?]
+              a2 [`(fn [~'__x] (not (or (~a1 ~'__x) (~a2 ~'__x)))) nt-comp?]
+              a1 [`(fn [~'__x] (not     (~a1 ~'__x))) nt-a1?])))))))
 
 (comment
-  (defmacro ep [form] (-invar-pred form))
-  (macroexpand '(ep [:and [:or string? integer?] #(not= % "bad")]))
-
-  ((ep [:and [:or string? integer?] #(not= % "bad")]) "bad")
-  ((ep [:or nil? string?]) "foo")
-  ((ep [:or [:and integer? neg?] string?]) 5)
-  ((ep [:or zero? nil?]) nil) ; (zero? nil) throws
-
-  (qb 10000
-    (#(or (string? %) (integer? %) (number? %)) 20.3)
-    ((ep [:or string? integer? number?]) 20.3)
-    (#(or (nil? %) (string? %)) "foo")
-    ((ep [:or nil? string?]) "foo")))
+  (-xpred string?)
+  (-xpred [:or string? integer? :foo]) ; t
+  (-xpred [:or string? integer? seq])  ; f
+  (-xpred [:or string? integer? [:and number? integer?]]) ; t
+  (-xpred [:or string? integer? [:and number? pos?]])     ; f
+  )
 
 (defn -assertion-error [msg] #+clj (AssertionError. msg) #+cljs (js/Error. msg))
 (def  -invar-undefined-val :invariant/undefined-val)
@@ -143,24 +163,25 @@
 (defmacro -invariant1
   "Written to maximize performance + minimize post Closure+gzip Cljs code size"
   [assertion? truthy? line pred x ?data-fn]
-  (let [;; form     (list pred x)
-        form        (str (list pred x)) ; Better expansion gzipping
-        pred*       (-invar-pred pred)
-        pass-result (if truthy? true '__x)]
+  (let [;; form (list pred x)
+        form    (str (list pred x)) ; Better expansion gzipping
+        [pred* non-throwing-pred?] (-xpred pred)
+        pass-result (if truthy? true '__x)
+        x-val-form
+        (if-not (list? x)
+          x ; x is pre-evaluated (common case); no need to wrap for throws
+          `(catch-errors* ~x ~'__t
+             (-invar-violation! ~assertion? ~(str *ns*) ~line '~form
+               -invar-undefined-val ~'__t ~?data-fn)))]
 
-    (if (list? x) ; x is a form; could throw on evaluation
-      `(let [~'__x
-             (catch-errors* ~x ~'__t
-               (-invar-violation! ~assertion? ~(str *ns*) ~line '~form
-                 -invar-undefined-val ~'__t ~?data-fn))]
+    (if non-throwing-pred?
+      `(let [~'__x ~x-val-form]
+         (if (~pred* ~'__x)
+           ~pass-result
+           (-invar-violation! ~assertion? ~(str *ns*) ~line '~form
+             ~'__x nil ~?data-fn)))
 
-         (catch-errors*
-           (if (~pred* ~'__x) ~pass-result (-invar-violation!))
-           ~'__t (-invar-violation! ~assertion? ~(str *ns*) ~line '~form
-                   ~'__x ~'__t ~?data-fn)))
-
-      ;; x is pre-evaluated (common case); no need to wrap for possible throws
-      `(let [~'__x ~x]
+      `(let [~'__x ~x-val-form]
          (catch-errors*
            (if (~pred* ~'__x) ~pass-result (-invar-violation!))
            ~'__t (-invar-violation! ~assertion? ~(str *ns*) ~line '~form

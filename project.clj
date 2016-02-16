@@ -1,4 +1,4 @@
-(defproject com.taoensso/truss "1.0.0"
+(defproject com.taoensso/truss "1.1.0"
   :author "Peter Taoussanis <https://www.taoensso.com>"
   :description "Assertions API for Clojure/Script"
   :url "https://github.com/ptaoussanis/truss"
@@ -18,7 +18,7 @@
   :plugins
   [[lein-pprint  "1.1.2"]
    [lein-ancient "0.6.8"]
-   [lein-codox   "0.9.1"]]
+   [lein-codox   "0.9.4"]]
 
   :profiles
   {;; :default [:base :system :user :provided :dev]

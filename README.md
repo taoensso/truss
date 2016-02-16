@@ -4,18 +4,18 @@
 **[CHANGELOG]** | [API] | current [Break Version]:
 
 ```clojure
-[com.taoensso/truss "1.0.0"] ; Stable
+[com.taoensso/truss "1.1.0"] ; Stable
 ```
 
 # Truss
 
 ### Great Clojure/Script error messages where you need them most
 
-**Or**: Wait, are we sure that's always a non-empty vector?
+**Or**: A **lightweight** alternative to **static typing**, [core.typed], [@plumatic/Schema], etc.
 
-**Or**: A lightweight alternative to [core.typed], [@plumatic/Schema], etc.
+**Or**: `(have set? x) => (if (set? x) x (throw-detailed-assertion-error!))`
 
-**Truss** is a **micro library** for Clojure/Script consisting of a single assertion macro that provides fast, flexible **runtime condition assertions** with **great error messages**.
+**Truss** is a **micro library** for Clojure/Script that provides fast, flexible **runtime condition assertions** with **great error messages**. It can be used to get many of the most important benefits of **static/gradual typing** without the usual rigidity or onboarding costs.
 
 ![Hero]
 
@@ -34,7 +34,7 @@
 Add the necessary dependency to your project:
 
 ```clojure
-[com.taoensso/truss "1.0.0"]
+[com.taoensso/truss "1.1.0"]
 ```
 
 And setup your namespace imports:
@@ -51,11 +51,10 @@ Truss uses a simple `(predicate arg)` pattern that should **immediately feel fam
 
 ```clojure
 (defn square [n]
-  (let [n (have integer? n)] ; <- A Truss assertion
+  (let [n (have integer? n)] ; <- A Truss assertion [1]
     (* n n)))
 
-;; This returns n if it satisfies (integer? n), otherwise it throws a clear error:
-;; (have integer? n)
+;; [1] This basically expands to (if (integer? n) n (throw-detailed-assertion-error!))
 
 (square 5)   ; => 25
 (square nil) ; =>
@@ -370,18 +369,20 @@ I very rarely use Truss for library code, though I wouldn't hesitate to in cases
 
 #### What's the performance cost?
 
-Usually insignificant. Truss has been tuned to minimize both code expansion size[1] and runtime costs.
+Usually insignificant. Truss has been **highly tuned** to minimize both code expansion size[1] and runtime costs.
+
+In many common cases, a Truss expression expands to little more than `(if (pred arg) arg (throw-detailed-assertion-error!))`.
 
 ```clojure
-(quick-bench 100000 ; 100k iterations
-       (string? "foo")
+(quick-bench 1e5
+  (if (string? "foo") "foo" (throw (Exception. "Assertion failure")))
   (have string? "foo"))
-;; => [4.19 4.78] ; 4.19ms vs 4.78ms
+;; => [4.19 4.17] ; ~4.2ms / 100k iterations
 ```
 
 > [1] This can be important for ClojureScript codebases
 
-So you're seeing ~15% overhead here against a simple predicate test. In practice this means that predicate costs dominate.
+So we're seeing zero overhead against a simple predicate test in this example. In practice this means that predicate costs dominate.
 
 For simple predicates (including `instance?` checks), modern JITs work great; the runtime performance impact is almost always completely insignificant even in tight loops.
 

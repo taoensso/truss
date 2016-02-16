@@ -90,9 +90,10 @@
     (have            string?  "a" "b" "c")
     (have? [:or nil? string?] "a" "b" "c")
     (have? [:or nil? string?] "a" "b" "c" :data "foo"))
-  ;; [     5.59 26.48 45.82] ; 1st gen (macro form)
-  ;; [     3.31 13.48 36.22] ; 2nd gen (fn form)
-  ;; [0.82 1.75  7.57 27.05] ; 3rd gen (lean macro form)
+  ;; [     5.59 26.48 45.82     ] ; 1st gen (macro form)
+  ;; [     3.31 13.48 36.22     ] ; 2nd gen (fn form)
+  ;; [0.82 1.75  7.57 27.05     ] ; 3rd gen (lean macro form)
+  ;; [0.4  0.47  1.3  1.77  1.53] ; 4th gen (macro preds)
 
   (qb 10000
     (have  string? :in ["foo" "bar" "baz"])

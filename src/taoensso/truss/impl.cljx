@@ -28,6 +28,8 @@
 (defn rsome   [pred coll] (reduce (fn [acc in] (when-let [p (pred in)] (reduced p))) nil coll))
 (defn revery? [pred coll] (reduce (fn [acc in] (if (pred in) true (reduced nil))) true coll))
 
+(defn nnil? [x] (not (nil? x))) ; Same as `some?` in Clojure v1.6+
+
 (defn set*     [x] (if (set? x) x (set x)))
 (defn ks=      [ks m] (=             (set (keys m)) (set* ks)))
 (defn ks<=     [ks m] (set/subset?   (set (keys m)) (set* ks)))
@@ -216,12 +218,14 @@
         sigs       (if data? (butlast (butlast sigs)) sigs)
 
         auto-pred? (= (count sigs) 1) ; Unique common case: (have ?x)
-        pred       (if auto-pred? 'taoensso.encore/nnil? (first sigs))
+        pred       (if auto-pred? 'taoensso.truss.impl/nnil? (first sigs))
         [?x1 ?xs]  (if auto-pred?
                      [(first sigs) nil]
                      (if (nnext sigs) [nil (next sigs)] [(second sigs) nil]))
         single-x?  (nil? ?xs)
-        map-fn     (if truthy? 'taoensso.encore/revery? 'clojure.core/mapv)]
+        map-fn     (if truthy?
+                     'taoensso.truss.impl/revery?
+                     'clojure.core/mapv)]
 
     (if elide?
       (if single-x? ?x1 (vec ?xs))

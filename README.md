@@ -4,7 +4,7 @@
 **[CHANGELOG]** | [API] | current [Break Version]:
 
 ```clojure
-[com.taoensso/truss "1.1.0"] ; Stable
+[com.taoensso/truss "1.1.1"] ; Stable
 ```
 
 # Truss

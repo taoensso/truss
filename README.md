@@ -34,7 +34,7 @@
 Add the necessary dependency to your project:
 
 ```clojure
-[com.taoensso/truss "1.1.0"]
+[com.taoensso/truss "1.1.1"]
 ```
 
 And setup your namespace imports:

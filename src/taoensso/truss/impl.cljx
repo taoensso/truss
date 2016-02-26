@@ -133,7 +133,9 @@
          line-str    (or ?line "?")
          form-str    (str form)
          undefn-val? (= val -invar-undefined-val)
-         val-str     (if undefn-val? "<undefined>" (str (or val "<nil>")) #_(pr-str val))
+         val-str     (cond undefn-val? "<undefined>"
+                           (nil? val)  "<nil>"
+                           :else (str val) #_(pr-str val))
          dummy-err?  (:invariant-violation? (ex-data ?err))
          ?err        (when-not dummy-err? ?err)
          ?err-str    (when-let [e ?err] (str ?err) #_(pr-str ?err))

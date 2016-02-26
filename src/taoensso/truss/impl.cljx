@@ -51,9 +51,9 @@
   (or
     (keyword? p)
     (boolean
-      (#{nil? #_some? string? integer? number? keyword? float?
-         set? vector? coll? list? ifn? fn? associative? sequential?
-         sorted? counted? reversible?}
+      (#{nil? #_some? string? integer? number? symbol? keyword? float?
+         set? vector? coll? list? ifn? fn? associative? sequential? delay?
+         sorted? counted? reversible? true? false? identity not boolean}
         (if (symbol? p) (resolve p) p)))))
 
 (defn -xpred

@@ -1,5 +1,13 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.1.2 - 2016 Feb 26
+
+* **Hotfix**: false vals were printing as "<nil>" in error messages
+
+```clojure
+[com.taoensso/truss "1.1.2"]
+```
+
 ## v1.1.1 - 2016 Feb 18
 
 * **Hotfix**: remove accidental encore reference [#1]

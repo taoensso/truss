@@ -4,7 +4,7 @@
 **[CHANGELOG]** | [API] | current [Break Version]:
 
 ```clojure
-[com.taoensso/truss "1.1.1"] ; Stable
+[com.taoensso/truss "1.1.2"] ; Stable
 ```
 
 # Truss
@@ -34,7 +34,7 @@
 Add the necessary dependency to your project:
 
 ```clojure
-[com.taoensso/truss "1.1.0"]
+[com.taoensso/truss "1.1.2"]
 ```
 
 And setup your namespace imports:

@@ -7,6 +7,8 @@
 [com.taoensso/truss "1.1.2"] ; Stable
 ```
 
+Want to help [support taoensso/open-source]?
+
 # Truss
 
 ### Great Clojure/Script error messages where you need them most
@@ -494,6 +496,7 @@ Copyright &copy; 2015-2016 [Peter Taoussanis].
 [@ptaoussanis]: https://www.taoensso.com
 [More by @ptaoussanis]: https://www.taoensso.com
 [Break Version]: https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md
+[support taoensso/open-source]: http://taoensso.com/clojure/backers
 
 <!--- Standard links (repo specific) -->
 [CHANGELOG]: https://github.com/ptaoussanis/truss/releases

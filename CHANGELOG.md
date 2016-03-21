@@ -1,12 +1,16 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.2.0 - 2016 Mar 21
+
+```clojure
+[com.taoensso/truss "1.2.0"]
+```
+
+* **New**: added `set-error-fn!` [#3] to allow easier control over how invariant violations are reported
+
 ## v1.1.2 - 2016 Feb 26
 
 * **Hotfix**: false vals were printing as "<nil>" in error messages
-
-```clojure
-[com.taoensso/truss "1.1.2"]
-```
 
 ## v1.1.1 - 2016 Feb 18
 

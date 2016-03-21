@@ -1,4 +1,4 @@
-(defproject com.taoensso/truss "1.1.2"
+(defproject com.taoensso/truss "1.2.0"
   :author "Peter Taoussanis <https://www.taoensso.com>"
   :description "Assertions API for Clojure/Script"
   :url "https://github.com/ptaoussanis/truss"
@@ -36,7 +36,7 @@
      :plugins
      [;; These must be in :dev, Ref. https://github.com/lynaghk/cljx/issues/47:
       [com.keminglabs/cljx "0.6.0"]
-      [lein-cljsbuild      "1.1.2"]]}]}
+      [lein-cljsbuild      "1.1.3"]]}]}
 
   ;; :jar-exclusions [#"\.cljx|\.DS_Store"]
 

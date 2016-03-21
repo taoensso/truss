@@ -4,7 +4,7 @@
 **[CHANGELOG]** | [API] | current [Break Version]:
 
 ```clojure
-[com.taoensso/truss "1.1.2"] ; Stable
+[com.taoensso/truss "1.2.0"] ; Stable
 ```
 
 Want to help [support taoensso/open-source]?
@@ -36,7 +36,7 @@ Want to help [support taoensso/open-source]?
 Add the necessary dependency to your project:
 
 ```clojure
-[com.taoensso/truss "1.1.2"]
+[com.taoensso/truss "1.2.0"]
 ```
 
 And setup your namespace imports:
@@ -357,6 +357,15 @@ No need for any special syntax or concepts, just define a function as you'd like
 
 ## FAQ
 
+#### How can I report/log violations?
+
+By default, Truss just throws an **exception** on any invariant violations. You can adjust that behaviour with the `set-error-fn!` and `with-error-fn` utils. Both take an arbitrary `(fn [msg data-map])`.
+
+Some common usage ideas:
+
+ * Use `with-error-fn` to capture violations during unit testing
+ * Use `set-error-fn!` to _log_ violations with something like [Timbre]
+
 #### Should I annotate my whole API?
 
 **Please don't**! I'd encourage you to think of Truss assertions like **salt in good cooking**; a little can go a long way, and the need for too much salt can be a sign that something's gone wrong in the cooking.
@@ -512,3 +521,4 @@ Copyright &copy; 2015-2016 [Peter Taoussanis].
 [@marick/structural-typing]: https://github.com/marick/structural-typing/
 [Midje]: https://github.com/marick/Midje
 [challenges]: #challenges
+[Timbre]: https://github.com/ptaoussanis/timbre

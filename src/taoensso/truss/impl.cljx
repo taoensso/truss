@@ -41,6 +41,7 @@
 ;;;; Truss
 
 (def ^:dynamic *-?data* nil)
+(def ^:dynamic *error-fn* (fn [msg data-map] (throw (ex-info msg data-map))))
 
 (defn  non-throwing [pred] (fn [x] (catch-errors* (pred x) _ nil)))
 (defn- non-throwing?
@@ -124,7 +125,8 @@
   ;; * Clojure 1.7+'s `pr-str` dumps a ton of error info that we don't want here
   ([] (throw (ex-info "Invariant violation" {:invariant-violation? true})))
   ([assertion? ns-str ?line form val ?err ?data-fn]
-   (let [fmt-msg
+   (let [instant (now-dt)
+         fmt-msg
          (fn [x1 x2 x3 x4]
            ;; Cider unfortunately doesn't seem to print newlines in errors
            (str "Invariant violation in `" x1 ":" x2 "` [pred-form, val]:"
@@ -147,22 +149,19 @@
          ?data       (when-let [data-fn ?data-fn]
                        (catch-errors* (data-fn) e {:data-error e}))]
 
-     (throw
-       ;; Vestigial, we now prefer to just always throw `ex-info`s:
-       ;; (if assertion? (-assertion-error msg) (ex-info msg {}))
-       (ex-info msg
-         {:dt       (now-dt)
-          :ns-str   ns-str
-          :?line    ?line
-          ;; :?form (when-not (string? form) form)
-          :form-str form-str
-          :val      (if undefn-val? 'undefined/threw-error val)
-          :val-type (if undefn-val? 'undefined/threw-error (type val))
-          :?data      ?data  ; Arbitrary user data, handy for debugging
-          :*?data*  *-?data* ; ''
-          :?err     ?err
-          :*assert* *assert*
-          :elidable? assertion?})))))
+     (*error-fn* msg
+       {:dt       now-dt
+        :ns-str   ns-str
+        :?line    ?line
+        ;; :?form (when-not (string? form) form)
+        :form-str form-str
+        :val      (if undefn-val? 'undefined/threw-error val)
+        :val-type (if undefn-val? 'undefined/threw-error (type val))
+        :?data      ?data  ; Arbitrary user data, handy for debugging
+        :*?data*  *-?data* ; ''
+        :?err     ?err
+        :*assert* *assert*
+        :elidable? assertion?}))))
 
 (defmacro -invariant1
   "Written to maximize performance + minimize post Closure+gzip Cljs code size"

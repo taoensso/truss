@@ -124,3 +124,18 @@
   [data & body] `(binding [impl/*-?data* ~data] ~@body))
 
 (comment (with-dynamic-assertion-data "foo" (have string? 5 :data "bar")))
+
+(defn- -error-fn [f]
+  (if (= f :default)
+    (fn [msg data-map] (throw (ex-info msg data-map)))
+    f))
+
+(defn set-error-fn!
+  "Sets the root (fn [msg data-map]) called on invariant violations.
+  Defaults to (fn [msg data-map] (throw (ex-info msg data-map)))."
+  [f]
+  #+cljs (set!             impl/*error-fn*        (-error-fn f))
+  #+clj  (alter-var-root #'impl/*error-fn* (fn [_] (-error-fn f))))
+
+(defmacro with-error-fn [f & body]
+  `(binding [impl/*error-fn* ~(-error-fn f)] ~@body))

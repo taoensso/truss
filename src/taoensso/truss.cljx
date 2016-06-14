@@ -27,7 +27,7 @@
 
   See also `have?`, `have!`."
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
-  [& sigs] `(-invariant :assertion nil ~(:line (meta &form)) ~@sigs))
+  [& sigs] `(-invariant :elidable nil ~(:line (meta &form)) ~@sigs))
 
 (defmacro have?
   "Like `have` but returns `true` on successful tests. This can be handy for use
@@ -35,7 +35,7 @@
     (fn my-fn [x] {:post [(have  nil? %)]} nil) ; {:post [nil]} FAILS
     (fn my-fn [x] {:post [(have? nil? %)]} nil) ; {:post [true]} passes as intended"
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
-  [& sigs] `(-invariant :assertion :truthy ~(:line (meta &form)) ~@sigs))
+  [& sigs] `(-invariant :elidable :truthy ~(:line (meta &form)) ~@sigs))
 
 (defmacro have!
   "Like `have` but ignores *assert* value (so can never be elided). Useful for
@@ -80,7 +80,10 @@
   (have? [:or nil? string?] "hello")
   (macroexpand '(have? [:or nil? string?] "hello"))
   (have? [:set>= #{:a :b}]    [:a :b :c])
-  (have? [:set<= [:a :b :c]] #{:a :b}))
+  (have? [:set<= [:a :b :c]] #{:a :b})
+  (qb 10000
+    (with-error-fn nil                  (have? string? 5))
+    (with-error-fn (fn [_] :truss/error) (have? string? 5))))
 
 (comment
   ;; HotSpot is great with these:
@@ -116,23 +119,18 @@
 
 (defn get-dynamic-assertion-data
   "Returns current value of dynamic assertion data"
-  [] impl/*-?data*)
+  [] impl/*?data*)
 
 (defmacro with-dynamic-assertion-data
   "Executes body with dynamic assertion data bound to given value.
   This data will be included in any violation errors thrown by body."
-  [data & body] `(binding [impl/*-?data* ~data] ~@body))
+  [data & body] `(binding [impl/*?data* ~data] ~@body))
 
 (comment (with-dynamic-assertion-data "foo" (have string? 5 :data "bar")))
 
-(defn- -error-fn [f]
-  (if (= f :default)
-    (fn [msg data-map] (throw (ex-info msg data-map)))
-    f))
-
+(defn-   -error-fn [f] (if (= f :default) impl/default-error-fn f))
 (defn set-error-fn!
-  "Sets the root (fn [msg data-map]) called on invariant violations.
-  Defaults to (fn [msg data-map] (throw (ex-info msg data-map)))."
+  "Sets the root (fn [data-map-delay]) called on invariant violations."
   [f]
   #+cljs (set!             impl/*error-fn*        (-error-fn f))
   #+clj  (alter-var-root #'impl/*error-fn* (fn [_] (-error-fn f))))

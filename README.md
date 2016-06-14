@@ -4,7 +4,7 @@
 **[CHANGELOG]** | [API] | current [Break Version]:
 
 ```clojure
-[com.taoensso/truss "1.2.0"] ; Stable
+[com.taoensso/truss "1.3.3"] ; Stable
 ```
 
 Want to help [support taoensso/open-source]?
@@ -36,7 +36,7 @@ Want to help [support taoensso/open-source]?
 Add the necessary dependency to your project:
 
 ```clojure
-[com.taoensso/truss "1.2.0"]
+[com.taoensso/truss "1.3.3"]
 ```
 
 And setup your namespace imports:
@@ -359,7 +359,7 @@ No need for any special syntax or concepts, just define a function as you'd like
 
 #### How can I report/log violations?
 
-By default, Truss just throws an **exception** on any invariant violations. You can adjust that behaviour with the `set-error-fn!` and `with-error-fn` utils. Both take an arbitrary `(fn [msg data-map])`.
+By default, Truss just throws an **exception** on any invariant violations. You can adjust that behaviour with the `set-error-fn!` and `with-error-fn` utils.
 
 Some common usage ideas:
 

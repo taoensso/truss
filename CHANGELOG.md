@@ -1,5 +1,13 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.3.3 - 2016 Jun 14
+
+```clojure
+[com.taoensso/truss "1.3.3"]
+```
+
+**BREAKING**: `error-fn` args have changed: `[msg data-map]` -> `[data-map-delay]`
+
 ## v1.2.0 - 2016 Mar 21
 
 ```clojure

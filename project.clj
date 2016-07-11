@@ -27,12 +27,12 @@
    :1.6  {:dependencies [[org.clojure/clojure "1.6.0"]]}
    :1.7  {:dependencies [[org.clojure/clojure "1.7.0"]]}
    :1.8  {:dependencies [[org.clojure/clojure "1.8.0"]]}
-   :1.9  {:dependencies [[org.clojure/clojure "1.9.0-alpha5"]]}
+   :1.9  {:dependencies [[org.clojure/clojure "1.9.0-alpha9"]]}
    :test {:dependencies [[org.clojure/test.check "0.9.0"]]}
    :dev
    [:1.9 :test :server-jvm
     {:dependencies
-     [[org.clojure/clojurescript "1.9.36"]]
+     [[org.clojure/clojurescript "1.9.93"]]
 
      :plugins
      [;; These must be in :dev, Ref. https://github.com/lynaghk/cljx/issues/47:

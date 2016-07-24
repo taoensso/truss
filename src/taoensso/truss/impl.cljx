@@ -1,10 +1,10 @@
 (ns taoensso.truss.impl
   "Private implementation details"
-  #+clj  (:require [clojure.set :as set])
-  #+cljs (:require [clojure.set :as set])
+  (:require [clojure.set :as set])
+  (:refer-clojure :exclude (some?))
   #+cljs (:require-macros
           [taoensso.truss.impl :as impl-macros
-           :refer (catch-errors* -invar)]))
+           :refer (compile-if catching -invar)]))
 
 (comment (require '[taoensso.encore :as enc :refer (qb)]))
 
@@ -20,29 +20,40 @@
 ;;   * Allows Truss to be entirely dependency free
 
 (defmacro if-cljs [then else] (if (:ns &env) then else))
-(defmacro catch-errors*
+(defmacro compile-if [test then else]
+  (if (try (eval test) (catch Throwable _ false)) `(do ~then) `(do ~else)))
+
+(defmacro catching "Cross-platform try/catch/finally."
+  ;; We badly need something like http://dev.clojure.org/jira/browse/CLJ-1293
   ;; TODO js/Error instead of :default as temp workaround for http://goo.gl/UW7773
-  ([try-form error-sym error-form]
+  ([try-expr                     ] `(catching ~try-expr ~'_ nil))
+  ([try-expr error-sym catch-expr]
    `(if-cljs
-      (try ~try-form (catch js/Error  ~error-sym ~error-form))
-      (try ~try-form (catch Throwable ~error-sym ~error-form))))
-  ([try-form error-sym error-form finally-form]
+      (try ~try-expr (catch js/Error  ~error-sym ~catch-expr))
+      (try ~try-expr (catch Throwable ~error-sym ~catch-expr))))
+  ([try-expr error-sym catch-expr finally-expr]
    `(if-cljs
-      (try ~try-form (catch js/Error  ~error-sym ~error-form) (finally ~finally-form))
-      (try ~try-form (catch Throwable ~error-sym ~error-form) (finally ~finally-form)))))
+      (try ~try-expr (catch js/Error  ~error-sym ~catch-expr) (finally ~finally-expr))
+      (try ~try-expr (catch Throwable ~error-sym ~catch-expr) (finally ~finally-expr)))))
 
 (defn rsome   [pred coll] (reduce (fn [acc in] (when-let [p (pred in)] (reduced p))) nil coll))
 (defn revery? [pred coll] (reduce (fn [acc in] (if (pred in) true (reduced nil))) true coll))
 
-(defn nnil? [x] (not (nil? x))) ; Same as `some?` in Clojure v1.6+
+#+cljs (defn ^boolean some? [x] (if (nil? x) false true))
+#+clj
+(defn some?
+  {:inline (fn [x] `(if (identical? ~x nil) false true))}
+  [x] (if (identical? x nil) false true))
 
-(defn set*     [x] (if (set? x) x (set x)))
-(defn ks=      [ks m] (=             (set (keys m)) (set* ks)))
-(defn ks<=     [ks m] (set/subset?   (set (keys m)) (set* ks)))
-(defn ks>=     [ks m] (set/superset? (set (keys m)) (set* ks)))
-(defn ks-nnil? [ks m] (revery? #(not (nil? (get m %)))    ks))
+(compile-if (completing (fn [])) ; Clojure 1.7+
+  (def  set* set)
+  (defn set* [x] (if (set? x) x (set x))))
 
-(defn now-dt [] #+clj (java.util.Date.) #+cljs (js/Date.))
+(do
+  (defn #+clj ks=      #+cljs ^boolean ks=      [ks m] (=             (set (keys m)) (set* ks)))
+  (defn #+clj ks<=     #+cljs ^boolean ks<=     [ks m] (set/subset?   (set (keys m)) (set* ks)))
+  (defn #+clj ks>=     #+cljs ^boolean ks>=     [ks m] (set/superset? (set (keys m)) (set* ks)))
+  (defn #+clj ks-nnil? #+cljs ^boolean ks-nnil? [ks m] (revery?     #(some? (get m %))     ks)))
 
 ;;;; Truss
 
@@ -53,7 +64,7 @@
 (def ^:dynamic *?data* nil)
 (def ^:dynamic *error-fn* default-error-fn)
 
-(defn  non-throwing [pred] (fn [x] (catch-errors* (pred x) _ nil)))
+(defn  non-throwing [pred] (fn [x] (catching (pred x))))
 (defn- non-throwing?
   "Returns true for some common preds that are naturally non-throwing"
   [p]
@@ -146,7 +157,7 @@
   (when-let [error-fn *error-fn*]
     (error-fn ; Nb consumer must deref while bindings are still active
      (delay
-      (let [instant     (now-dt)
+      (let [instant     #+clj (java.util.Date.) #+cljs (js/Date.)
             line-str    (or ?line "?")
             form-str    (str form)
             undefn-val? (identical? val -dummy-val)
@@ -174,7 +185,7 @@
 
             ?data
             (when-let [data-fn ?data-fn]
-              (catch-errors* (data-fn) e {:data-error e}))]
+              (catching (data-fn) e {:data-error e}))]
 
         {:dt        instant
          :msg_      msg_
@@ -203,13 +214,13 @@
            ~(if truthy? true x)
            (-invar-violation! ~elidable? ~(str *ns*) ~line ~form ~x nil ~?data-fn))
 
-        `(let [~'e (catch-errors* (if (~pred* ~x) nil -dummy-error) ~'e ~'e)]
+        `(let [~'e (catching (if (~pred* ~x) nil -dummy-error) ~'e ~'e)]
            (if (nil? ~'e)
              ~(if truthy? true x)
              (-invar-violation! ~elidable? ~(str *ns*) ~line ~form ~x ~'e ~?data-fn))))
 
       (if non-throwing-pred?
-        `(let [~'z (catch-errors* ~x ~'e (WrappedError. ~'e))
+        `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
                ~'e (if (instance? WrappedError ~'z)
                      ~'z
                      (if (~pred* ~'z) nil -dummy-error))]
@@ -218,8 +229,8 @@
              ~(if truthy? true 'z)
              (-invar-violation! ~elidable? ~(str *ns*) ~line ~form ~'z ~'e ~?data-fn)))
 
-        `(let [~'z (catch-errors* ~x ~'e (WrappedError. ~'e))
-               ~'e (catch-errors*
+        `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
+               ~'e (catching
                     (if (instance? WrappedError ~'z)
                       ~'z
                       (if (~pred* ~'z) nil -dummy-error)) ~'e ~'e)]
@@ -250,24 +261,24 @@
   (-invar false false 1 zero?    (/ 5 0) nil) ; Form error example
   )
 
-(defmacro -invariant [elidable? truthy? line & sigs]
-  (let [bang?      (= (first sigs) :!) ; For back compatibility, undocumented
+(defmacro -invariant [elidable? truthy? line & args]
+  (let [bang?      (= (first args) :!) ; For back compatibility, undocumented
         elidable?  (and elidable? (not bang?))
         elide?     (and elidable? (not *assert*))
-        sigs       (if bang? (next sigs) sigs)
-        in?        (= (second sigs) :in) ; (have pred :in xs1 xs2 ...)
-        sigs       (if in? (cons (first sigs) (nnext sigs)) sigs)
+        args       (if bang? (next args) args)
+        in?        (= (second args) :in) ; (have pred :in xs1 xs2 ...)
+        args       (if in? (cons (first args) (nnext args)) args)
 
-        data?      (and (> (count sigs) 2) ; Distinguish from `:data` pred
-                        (= (last (butlast sigs)) :data))
-        ?data-fn   (when data? `(fn [] ~(last sigs)))
-        sigs       (if data? (butlast (butlast sigs)) sigs)
+        data?      (and (> (count args) 2) ; Distinguish from `:data` pred
+                        (= (last (butlast args)) :data))
+        ?data-fn   (when data? `(fn [] ~(last args)))
+        args       (if data? (butlast (butlast args)) args)
 
-        auto-pred? (= (count sigs) 1) ; Unique common case: (have ?x)
-        pred       (if auto-pred? 'taoensso.truss.impl/nnil? (first sigs))
+        auto-pred? (= (count args) 1) ; Unique common case: (have ?x)
+        pred       (if auto-pred? 'taoensso.truss.impl/some? (first args))
         [?x1 ?xs]  (if auto-pred?
-                     [(first sigs) nil]
-                     (if (nnext sigs) [nil (next sigs)] [(second sigs) nil]))
+                     [(first args) nil]
+                     (if (nnext args) [nil (next args)] [(second args) nil]))
         single-x?  (nil? ?xs)
         map-fn     (if truthy?
                      'taoensso.truss.impl/revery?

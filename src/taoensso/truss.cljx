@@ -27,7 +27,7 @@
 
   See also `have?`, `have!`."
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
-  [& sigs] `(-invariant :elidable nil ~(:line (meta &form)) ~@sigs))
+  [& args] `(-invariant :elidable nil ~(:line (meta &form)) ~@args))
 
 (defmacro have?
   "Like `have` but returns `true` on successful tests. This can be handy for use
@@ -35,13 +35,13 @@
     (fn my-fn [x] {:post [(have  nil? %)]} nil) ; {:post [nil]} FAILS
     (fn my-fn [x] {:post [(have? nil? %)]} nil) ; {:post [true]} passes as intended"
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
-  [& sigs] `(-invariant :elidable :truthy ~(:line (meta &form)) ~@sigs))
+  [& args] `(-invariant :elidable :truthy ~(:line (meta &form)) ~@args))
 
 (defmacro have!
   "Like `have` but ignores *assert* value (so can never be elided). Useful for
   important conditions in production (e.g. security checks)."
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
-  [& sigs] `(-invariant nil nil ~(:line (meta &form)) ~@sigs))
+  [& args] `(-invariant nil nil ~(:line (meta &form)) ~@args))
 
 (defmacro have!?
   "Specialized cross between `have?` and `have!`. Not used often but can be
@@ -52,7 +52,7 @@
   they're always subject to *assert* and will interfere with the intent of the
   bang (`!`) here."
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
-  [& sigs] `(-invariant :assertion :truthy ~(:line (meta &form)) ~@sigs))
+  [& args] `(-invariant :assertion :truthy ~(:line (meta &form)) ~@args))
 
 (comment
   (let [x 5]      (have    integer? x))

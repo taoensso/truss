@@ -171,7 +171,7 @@
             (cond
               (identical? -dummy-error ?err) nil
               (instance?  WrappedError ?err)
-              (.val      ^WrappedError ?err)
+              (.-val     ^WrappedError ?err)
               :else                    ?err)
 
             msg_

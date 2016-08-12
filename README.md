@@ -4,7 +4,7 @@
 **[CHANGELOG]** | [API] | current [Break Version]:
 
 ```clojure
-[com.taoensso/truss "1.3.3"] ; Stable
+[com.taoensso/truss "1.3.5"] ; Stable
 ```
 
 > Please consider helping to [support my continued open-source Clojure/Script work]? 
@@ -97,7 +97,7 @@ More details on Truss's performance available [here](https://github.com/ptaoussa
 Add the necessary dependency to your project:
 
 ```clojure
-[com.taoensso/truss "1.3.3"]
+[com.taoensso/truss "1.3.5"]
 ```
 
 And setup your namespace imports:

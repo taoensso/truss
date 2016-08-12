@@ -1,5 +1,13 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.3.5 - 2016 Aug 12
+
+```clojure
+[com.taoensso/truss "1.3.5"]
+```
+
+* **Hotfix**: cljs error wrapping was broken
+
 ## v1.3.3 - 2016 Jun 14
 
 ```clojure

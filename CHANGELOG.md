@@ -1,5 +1,13 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.3.6 - 2016 Sep 7
+
+```clojure
+[com.taoensso/truss "1.3.6"]
+```
+
+* Tweaked invariant-violation error message to make it clearer for beginners
+
 ## v1.3.5 - 2016 Aug 12
 
 ```clojure

@@ -143,8 +143,7 @@
 
 (defn- fmt-err-msg [x1 x2 x3 x4]
   ;; Cider unfortunately doesn't seem to print newlines in errors
-  (str "Invariant violation in `" x1 ":" x2 "` [pred-form, val]:"
-       "\n [" x3 ", " x4 "]"))
+  (str "Invariant violation in `" x1 ":" x2 "`. Test form: `" x3 "` with failing input: `" x4 "`"))
 
 (deftype WrappedError [val])
 (defn -assertion-error [msg] #+clj (AssertionError. msg) #+cljs (js/Error. msg))

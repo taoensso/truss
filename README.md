@@ -380,9 +380,10 @@ Truss offers some shorthands for your convenience. **These are all optional**: t
 ;; Combine predicates (and)
 (have [:and integer? even? pos?] 6) ; => 6
 
-;; Element of
-(have [:el #{:a :b :c :d}] :b) ; => :b
-(have [:el #{:a :b :c :d}] :e) ; => Error
+;; Element of (checks for set containment)
+(have [:el #{:a :b :c :d nil}] :b) ; => :b
+(have [:el #{:a :b :c :d nil}] :b) ; => nil
+(have [:el #{:a :b :c :d nil}] :e) ; => Error
 
 ;; Superset
 (have [:set>= #{:a :b}] #{:a :b :c}) ; => #{:a :b :c}

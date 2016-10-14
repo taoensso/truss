@@ -1,8 +1,8 @@
 (ns taoensso.truss
-  "An opinionated assertions API for Clojure/Script"
+  "An opinionated assertions API for Clojure/Script."
   {:author "Peter Taoussanis (@ptaoussanis)"}
-  #+clj  (:require [taoensso.truss.impl :as impl :refer        (-invariant)])
-  #+cljs (:require [taoensso.truss.impl :as impl :refer-macros (-invariant)]))
+  #+clj  (:require [taoensso.truss.impl :as impl :refer        [-invariant]])
+  #+cljs (:require [taoensso.truss.impl :as impl :refer-macros [-invariant]]))
 
 (comment (require '[taoensso.encore :as enc :refer (qb)]))
 
@@ -30,27 +30,27 @@
   [& args] `(-invariant :elidable nil ~(:line (meta &form)) ~@args))
 
 (defmacro have?
-  "Like `have` but returns `true` on successful tests. This can be handy for use
-  with :pre/:post conditions. Compare:
+  "Like `have` but returns `true` on successful tests. This can be handy for
+  use with :pre/:post conditions. Compare:
     (fn my-fn [x] {:post [(have  nil? %)]} nil) ; {:post [nil]} FAILS
     (fn my-fn [x] {:post [(have? nil? %)]} nil) ; {:post [true]} passes as intended"
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
   [& args] `(-invariant :elidable :truthy ~(:line (meta &form)) ~@args))
 
 (defmacro have!
-  "Like `have` but ignores *assert* value (so can never be elided). Useful for
-  important conditions in production (e.g. security checks)."
+  "Like `have` but ignores *assert* value (so can never be elided). Useful
+  for important conditions in production (e.g. security checks)."
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
   [& args] `(-invariant nil nil ~(:line (meta &form)) ~@args))
 
 (defmacro have!?
   "Specialized cross between `have?` and `have!`. Not used often but can be
-  handy for semantic clarification and/or to improve multi-val performance when
-  the return vals aren't necessary.
+  handy for semantic clarification and/or to improve multi-val performance
+  when the return vals aren't necessary.
 
   **WARNING**: Resist the temptation to use these in :pre/:post conds since
-  they're always subject to *assert* and will interfere with the intent of the
-  bang (`!`) here."
+  they're always subject to *assert* and will interfere with the intent of
+  the bang (`!`) here."
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
   [& args] `(-invariant :assertion :truthy ~(:line (meta &form)) ~@args))
 
@@ -118,7 +118,7 @@
 ;;;; Utils
 
 (defn get-dynamic-assertion-data
-  "Returns current value of dynamic assertion data"
+  "Returns current value of dynamic assertion data."
   [] impl/*?data*)
 
 (defmacro with-dynamic-assertion-data

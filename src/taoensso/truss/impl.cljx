@@ -1,23 +1,22 @@
 (ns taoensso.truss.impl
-  "Private implementation details"
+  "Private implementation details."
   (:require [clojure.set :as set])
-  (:refer-clojure :exclude (some?))
-  #+cljs (:require-macros
-          [taoensso.truss.impl :as impl-macros
-           :refer (compile-if catching -invar)]))
+  (:refer-clojure :exclude [some?])
+  #+cljs
+  (:require-macros
+   [taoensso.truss.impl :as impl-macros
+    :refer [compile-if catching -invar]]))
 
-(comment (require '[taoensso.encore :as enc :refer (qb)]))
+(comment (require '[taoensso.encore :as enc :refer [qb]]))
 
 ;;;; TODO
-;; * Explore adding a namespaced kw registry concept, ala clojure.spec
-;;   (truss/def <kw> <pred>)
-;; * Explore strategies for easier sharing of composed preds
-;; * Add some spec-like preds for easier transition between the two
+;; - Namespaced kw registry like clojure.spec, (truss/def <kw> <pred>)?
+;; - Ideas for easier sharing of composed preds?
 
 ;;;; Manual Encore imports
 ;; A bit of a nuisance but:
-;;   * Allows Encore to depend on Truss (esp. nb for back-compatibility wrappers)
-;;   * Allows Truss to be entirely dependency free
+;;   - Allows Encore to depend on Truss (esp. nb for back-compatibility wrappers).
+;;   - Allows Truss to be entirely dependency free.
 
 (defmacro if-cljs [then else] (if (:ns &env) then else))
 (defmacro compile-if [test then else]
@@ -66,7 +65,7 @@
 
 (defn  non-throwing [pred] (fn [x] (catching (pred x))))
 (defn- non-throwing?
-  "Returns true for some common preds that are naturally non-throwing"
+  "Returns true for some common preds that are naturally non-throwing."
   [p]
   #+cljs false ; Would need `resolve`; other ideas?
   #+clj
@@ -81,7 +80,7 @@
         (if (symbol? p) (when-let [v (resolve p)] @v) p)))))
 
 (defn -xpred
-  "Expands any special predicate forms and returns [<expanded-pred> <non-throwing?>]"
+  "Expands any special predicate forms and returns [<expanded-pred> <non-throwing?>]."
   [pred]
   (if-not (vector? pred)
     [pred (non-throwing? pred)]
@@ -125,9 +124,9 @@
               a1 [a1 nt-a1?])
 
             :not ; complement/none-of
-            ;; Note that it's a little ambiguous whether we'd want non-throwing
-            ;; behaviour here or not so choosing to interpret throws as
-            ;; undefined to minimize surprise
+            ;; Note that it's a little ambiguous whether we'd want
+            ;; non-throwing behaviour here or not so choosing to interpret
+            ;; throws as undefined to minimize surprise
             (cond
               a3 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x) (~a3 ~'x)))) nt-comp?]
               a2 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x)))) nt-comp?]
@@ -143,15 +142,15 @@
 
 (defn- fmt-err-msg [x1 x2 x3 x4]
   ;; Cider unfortunately doesn't seem to print newlines in errors
-  (str "Invariant violation in `" x1 ":" x2 "`. Test form: `" x3 "` with failing input: `" x4 "`"))
+  (str "Invariant violation in `" x1 ":" x2 "`. Test form `" x3 "` with failing input: `" x4 "`"))
 
 (deftype WrappedError [val])
 (defn -assertion-error [msg] #+clj (AssertionError. msg) #+cljs (js/Error. msg))
 (def  -dummy-val   #+clj (Object.) #+cljs (js-obj))
 (def  -dummy-error #+clj (Object.) #+cljs (js-obj))
 (defn -invar-violation!
-  ;; * http://dev.clojure.org/jira/browse/CLJ-865 would be handy for line numbers
-  ;; * Clojure 1.7+'s `pr-str` dumps a ton of error info that we don't want here
+  ;; - http://dev.clojure.org/jira/browse/CLJ-865 would be handy for line numbers.
+  ;; - Clojure 1.7+'s `pr-str` dumps a ton of error info that we don't want here.
   [elidable? ns-str ?line form val ?err ?data-fn]
   (when-let [error-fn *error-fn*]
     (error-fn ; Nb consumer must deref while bindings are still active
@@ -184,7 +183,8 @@
 
             ?data
             (when-let [data-fn ?data-fn]
-              (catching (data-fn) e {:data-error e}))]
+              (catching (data-fn) e
+                {:data-error e}))]
 
         {:dt        instant
          :msg_      msg_
@@ -201,7 +201,7 @@
          :elidable? elidable?})))))
 
 (defmacro -invar
-  "Written to maximize performance + minimize post Closure+gzip Cljs code size"
+  "Written to maximize performance + minimize post Closure+gzip Cljs code size."
   [elidable? truthy? line pred x ?data-fn]
   (let [form #_(list pred x) (str (list pred x)) ; Better expansion gzipping
         non-throwing-x? (not (list? x)) ; Pre-evaluated (common case)

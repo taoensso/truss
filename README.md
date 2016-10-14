@@ -17,7 +17,7 @@
 
 ### Great Clojure/Script error messages where you need them most
 
-**Or**: A **lightweight** alternative to **static typing**, [clojure.spec], [core.typed], [@plumatic/Schema], etc.
+**Or**: A **lightweight** alternative to **static typing**, [clojure.spec], [core.typed], [@plumatic/schema], etc.
 
 **Or**: `(have set? x) => (if (set? x) x (throw-detailed-assertion-error!))`
 
@@ -29,68 +29,30 @@
 
 ## Features
 
- * **Tiny** cross-platform codebase with **zero external dependencies**
- * Trivial to understand and use
- * Use **just** when+where you need it (**incl. libraries**)
- * Minimal (or zero) runtime performance cost
- * A practical **80% solution** (focus on **improving error messages**)
- * **Fast**. Truss [outperforms](#performance) all similar libraries that I'm aware of.
+ * **Tiny** cross-platform codebase with **zero external dependencies**.
+ * Trivial to understand and use.
+ * Use **just** when+where you need it (**incl. libraries**).
+ * Minimal (or zero) runtime performance cost.
+ * A practical **80% solution** (focus on **improving error messages**).
 
-## How does it compare to [clojure.spec]?
+## How does it compare to [clojure.spec], [core.typed], [@plumatic/schema]?
 
-> I have a truly marvellous comparison to share, which this Tweet is unfortunately too narrow to contain...
+This is unfortunately a _really_ tough question to answer briefly. It comes down to trade-offs.
 
-There's a lot that I like about clojure.spec, and think that it's a _wonderful_ addition to Clojure that makes some really smart choices.
+Very superficially, very **subjectively**:
 
-But, invariably, writing software is about making trade-offs; and nothing can be optimized for every case.
+Library      | Ease of setup | Ease of use | Features | Favourite aspect/s
+------------ | ------------- | ----------- | -------- | ------------------
+clojure.spec | ★★           | ★★         | ★★½     | Official, wide applicability (docs, generative tests, etc.)
+core.typed   | ★             | ★          | ★★★     | Compile-time safety, most rigorous
+Schema       | ★★½          | ★★½       | ★        | Simplicity/power balance, widely adopted
+**Truss**    | ★★★          | ★★★       | ★        | Simplicity/power balance, API
 
-As I see it, clojure.spec takes a balanced view that emphasizes the ability to use one tool (specs) to do a number of useful things: 
+Re: performance - Truss consistently [outperforms](http://muhuk.github.io/validation-benchmark/) similar libs, though I'd suggest that speed is probably one of the least interesting factors to consider when choosing a lib to use.
 
- * Provide documentation
- * Provide runtime conformance testing and destructuring
- * Provide generative testing
+The best general recommendation I can make is to try actually experiment with the options that seem appealing. Nothing beats hands-on experience for deciding what best fits your particular needs and tastes.
 
-That's great leverage for one concept, and I think the big-picture emphasis makes sense for clojure.spec's role in the ecosystem. It's the _right choice_.
-
-But, as I see it, tying some of these things together also makes clojure.spec suboptimal for some of the things for which I like to use Truss.
-
-Some of Truss's comparative benefits as I see them:
-
- * **Inline assertions** of **arbitrary forms** - easily check your assumptions about the _arbitrary internal state_ of your functions
- * **Zero setup** or ceremony; only need to define concepts if you're expecting to reuse them often
- * Well suited to **throwaway dev/debugging work**
- * Arbitrarily complex, real-world predicates without worrying about how they'll **interact with generative testing** or **doc generation** [1]
- * **Very** fast assertion runtime checking
-
-> **[1]** Writing a `valid-customer?` predicate is often much, much easier than writing a valid-customer **generator**. It might still be useful to write the generator at some point, but I may like being able to choose if/when to invest in doing that.
-
-All of this is of course subjective, and a little difficult to express w/o a lengthy post and detailed non-toy examples.
-
-Suffice it to say: I **like** clojure.spec a lot and will be using it. It's good. At the same time, I think it serves a very different sweet spot to Truss, so I'm going to be using them together and letting them complement one another.
-
-I'd summarize like so:
-
-**clojure.spec** is a relatively high-level way to formally specify and help verify the shape of your Clojure data and functions.
-
-**Truss** is a fast, low-ceremony, low-level way of encoding assumptions about arbitrary Clojure forms, directly into the forms.
-
-The use cases overlap, but not massively (and not as much as you might think). When/where you'd reach for each is subjective and unfortunately a little nuanced so quite beyond the scope of this.
-
-Ultimately it's not too important; use whatever you feel most productive with. If/when you start feeling frustrated by aspects of what you're using- that's when you'll best be able to define what you'd like to be different, and so when you'll best be prepared to look for the right complementary tools.
-
-> **UPDATE**: clojure.spec seems to still be undergoing pretty aggressive development, so comments here may/not go stale by the time you read this. Will try update after Clojure v1.9 is stable.
-
-## Performance
-
-Truss is **highly optimized**, and doesn't try to do too much. In most cases, it'll expand to no more than `(if (pred arg) arg (throw-detailed-assertion-error!))` - about as lightweight as you can get for an assertion.
-
-All the good stuff happens during **macro-expansion time**, to populate the assertion error with useful **compile-time** info.
-
-More details on Truss's performance available [here](https://github.com/ptaoussanis/truss#whats-the-performance-cost).
-
-![Benchmarks](https://raw.githubusercontent.com/ptaoussanis/truss/master/benchmarks.jpg)
-
-> Graph generated by [@muhuk/validation-benchmark](https://github.com/muhuk/validation-benchmark)
+> See also [@marick/structural-typing] for another structural typing option by the creator of [Midje] :-)
 
 ## Quickstart
 
@@ -121,17 +83,18 @@ Truss uses a simple `(predicate arg)` pattern that should **immediately feel fam
 
 (square 5)   ; => 25
 (square nil) ; =>
-;; Invariant violation in `taoensso.truss.examples:11` [pred-form, val]:
-;; [(integer? n), <nil>]
-;; {:instant 1450937904762,
-;;  :ns "taoensso.truss.examples",
+;; Invariant violation in `taoensso.truss.examples:10`.
+;; Test form `(integer? n)` with failing input: `<nil>`
+;; {:*?data* nil,
 ;;  :elidable? true,
+;;  :dt #inst "2016-10-14T10:01:28.671-00:00",
 ;;  :val nil,
+;;  :ns-str "taoensso.truss.examples",
 ;;  :val-type nil,
 ;;  :?err nil,
 ;;  :*assert* true,
 ;;  :?data nil,
-;;  :?line 11,
+;;  :?line 10,
 ;;  :form-str "(integer? n)"}
 ```
 
@@ -210,8 +173,8 @@ A Truss `(have <pred> <arg>)` form will either throw or return the given argumen
 
 ;; Anything that fails the predicate will throw an error
 (have string? 42) ; =>
-;; Invariant violation in `taoensso.truss.examples:44` [pred-form, val]:
-;; [(string? 42), 42]
+;; Invariant violation in `taoensso.truss.examples:44`.
+;; Test form `(string? 42)` with failing input: `42`
 ;; {:instant 1450937836680,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
@@ -225,8 +188,8 @@ A Truss `(have <pred> <arg>)` form will either throw or return the given argumen
 
 ;; Truss also automatically traps and handles exceptions
 (have string? (/ 1 0)) ; =>
-;; Invariant violation in `taoensso.truss.examples:59` [pred-form, val]:
-;; [(string? (/ 1 0)), <undefined>]
+;; Invariant violation in `taoensso.truss.examples:59`.
+;; Test form `(string? (/ 1 0))` with failing input: `<undefined>`
 ;; `val` error: java.lang.ArithmeticException: Divide by zero
 ;; {:instant 1450938025898,
 ;;  :ns "taoensso.truss.examples",
@@ -256,8 +219,8 @@ A Truss `(have <pred> <arg>)` form will either throw or return the given argumen
 ;; This won't compromise error message clarity
 (let [[x y z] (have string? "foo" 42 "baz")]
   (str x y z)) ; =>
-  ;; Invariant violation in `taoensso.truss.examples:91` [pred-form, val]:
-;; [(string? 42), 42]
+;; Invariant violation in `taoensso.truss.examples:91`.
+;; Test form `(string? 42)` with failing input: `42`
 ;; {:instant 1450938267043,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
@@ -280,8 +243,8 @@ You can attach arbitrary debug data to be displayed on violations:
     (* x y)))
 
 (my-handler {:foo :bar} 5 nil) ; =>
-;; Invariant violation in `taoensso.truss.examples:146` [pred-form, val]:
-;; [(integer? y), <nil>]
+;; Invariant violation in `taoensso.truss.examples:146`.
+;; Test-form `(integer? y)` with failing input: `<nil>`
 ;; {:instant 1450939196719,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
@@ -320,8 +283,8 @@ And you can attach shared debug data at the `binding` level:
 (comment
   (wrapped-ring-handler
     {:method :get :uri "/" :session {:user-name "Stu"}}) ; =>
-   ;; Invariant violation in `taoensso.truss.examples:136` [pred-form, val]:
-   ;; [(string? 42), 42]
+   ;; Invariant violation in `taoensso.truss.examples:136`
+   ;; Test form `(string? 42)` with failing input: `42
    ;; {:*?data* {:ring-session {:user-name "Stu"}}, ; <--- This got included
    ;;  :elidable? true,
    ;;  :dt #inst "2015-12-28T05:57:49.759-00:00",
@@ -484,69 +447,6 @@ If you're using Leiningen, you can add the following to your `project.clj`:
               ;; *unchecked-math*     :warn-on-boxed
               }
 ```
-
-#### Wouldn't you rather just have static typing?
-
-Every conceivable type system necessarily provides trade-offs. Sometimes you'll want a static type system, sometimes a dynamic, and sometimes a gradual.
-
-Truss is a tool to help folks who've decided that a dynamic or gradual type system makes sense for their current team and objectives.
-
-#### Wouldn't you rather just have unit tests?
-
-Unit tests are one common way of dealing with some of the [challenges] that large Clojure codebases face.
-
-In my experience, Truss can cover a lot of (but not all) the same ground. In cases of overlap, choose whichever you feel would be more productive for your team and objectives.
-
-Personally, I tend to favour Truss when possible because an assertion:
-
-  1. Is present _precisely_ where it's relevant
-  2. Acts as a form of documentation
-  3. Tends to be quicker to write and keep up-to-date than a test
-  4. Offers runtime protection
-
-#### Any related/similar/alternative libraries you could recommend?
-
-Confession: I wrote the first versions of Truss back in 2012. Since it satisfied my own needs, haven't spent much time since then looking too closely at any alternatives besides core.typed.
-
-Would **definitely** encourage interested folks to take a good look at all the tools available today, experiment, and find the option/s that best suit your particular goals and preferred work style.
-
-Link                        | Description
---------------------------- | --------------------------------------------------
-[core.typed]                | An optional type system for Clojure
-[@plumatic/schema]         | Clojure(Script) library for declarative data description and validation
-[@marick/structural-typing] | Structural typing for Clojure by the creator of [Midje], somewhat inspired by Elm
-
-#### How does Truss compare to gradual typing / [core.typed]?
-
-Typed Clojure is _awesome_ and something I'd definitely recommend considering. As with all type systems though, it necessarily provides trade-offs.
-
-Some of the challenges I've noticed with gradual typing:
-
-  1. Buy-in cost can sometimes be high (often all-or-nothing adoption)
-  2. Difficulty evaluating benefits (because of the buy-in cost)
-  3. Difficulty with inclusion in libraries (forces downstream requirements)
-  4. Difficulty educating developers (new syntax, type theory, etc.)
-  5. Added complexity (lots of code, extra tools, possible bugs, library incompatibilities, etc.)
-  6. Sometimes clumsy/difficult to define nuanced types (e.g. transducers)
-  7. Low control over long-term cost/benefit trade-offs (can be difficult to apply with precision where it'd most help)
-
-To be clear: there's absolutely times when gradual typing provides a wonderful fit. Indeed, I've found the practical overlap between core.typed and Truss small and the two often complimentary.
-
-Experiment, weigh your options, choose whatever makes sense for your team and objectives.
-
-#### Why isn't there something like this for \<other programming language\>?
-
-Short answer: Lisp macros. You could write something _similar_ to Truss in most languages but you'd have a tough time getting the same balance of brevity, flexibility, and performance.
-
-Some things are just _much_ easier in a Lisp. Logging's one of them, this is another.
-
-#### What's your view on static vs dynamic typing?
-
-I've used and enjoyed aspects of a number of type systems at one point or another. What I reach for on a particular job is entirely dependent on what I expect would be the most productive for that job.
-
-Likewise, the tools _you'll_ find most productive will necessarily depend _on you_: your objectives and your preferred style of working. Trying to argue that one kind of programming is strictly better than another is like trying to argue that a chisel is strictly better than a wrench.
-
-I'd advocate using whatever tools help you meet your objectives, and regularly trying new stuff to get a sense of your options. Use what you like, skip the rest.
 
 ## Contacting me / contributions
 

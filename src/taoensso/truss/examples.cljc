@@ -1,7 +1,7 @@
 (ns taoensso.truss.examples
   {:author "Peter Taoussanis (@ptaoussanis)"}
-  #?(:clj  (:require [taoensso.truss :as truss :refer        (have have! have?)])
-     :cljs (:require [taoensso.truss :as truss :refer-macros (have have! have?)])))
+  #?(:clj  (:require [taoensso.truss :as truss :refer        [have have! have?]])
+     :cljs (:require [taoensso.truss :as truss :refer-macros [have have! have?]])))
 
 ;;;; First API example
 
@@ -15,17 +15,18 @@
 
 (square 5)   ; => 25
 (square nil) ; =>
-;; Invariant violation in `taoensso.truss.examples:11` [pred-form, val]:
-;; [(integer? n), <nil>]
-;; {:instant 1450937904762,
-;;  :ns "taoensso.truss.examples",
+;; Invariant violation in `taoensso.truss.examples:10`.
+;; Test form `(integer? n)` with failing input: `<nil>`
+;; {:*?data* nil,
 ;;  :elidable? true,
+;;  :dt #inst "2016-10-14T10:01:28.671-00:00",
 ;;  :val nil,
+;;  :ns-str "taoensso.truss.examples",
 ;;  :val-type nil,
 ;;  :?err nil,
 ;;  :*assert* true,
 ;;  :?data nil,
-;;  :?line 11,
+;;  :?line 10,
 ;;  :form-str "(integer? n)"}
 )
 
@@ -42,8 +43,8 @@
 
 ;; Anything that fails the predicate will throw an error
 (have string? 42) ; =>
-;; Invariant violation in `taoensso.truss.examples:44` [pred-form, val]:
-;; [(string? 42), 42]
+;; Invariant violation in `taoensso.truss.examples:44`.
+;; Test form `(string? 42)` with failing input: `42`
 ;; {:instant 1450937836680,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
@@ -57,8 +58,8 @@
 
 ;; Truss also automatically traps and handles exceptions
 (have string? (/ 1 0)) ; =>
-;; Invariant violation in `taoensso.truss.examples:59` [pred-form, val]:
-;; [(string? (/ 1 0)), <undefined>]
+;; Invariant violation in `taoensso.truss.examples:59`
+;; Test form `(string? (/ 1 0))` with failing input: `<undefined>`
 ;; `val` error: java.lang.ArithmeticException: Divide by zero
 ;; {:instant 1450938025898,
 ;;  :ns "taoensso.truss.examples",
@@ -88,7 +89,8 @@
 ;; This won't compromise error message clarity
 (let [[x y z] (have string? "foo" 42 "baz")]
   (str x y z)) ; =>
-  ;; Invariant violation in `taoensso.truss.examples:91` [pred-form, val]:
+;; Invariant violation in `taoensso.truss.examples:91`.
+;; Test form `(string? 42)` with failing input: `42`
 ;; [(string? 42), 42]
 ;; {:instant 1450938267043,
 ;;  :ns "taoensso.truss.examples",
@@ -110,8 +112,8 @@
     (* x y)))
 
 (my-handler {:foo :bar} 5 nil) ; =>
-;; Invariant violation in `taoensso.truss.examples:146` [pred-form, val]:
-;; [(integer? y), <nil>]
+;; Invariant violation in `taoensso.truss.examples:146`.
+;; Test-form `(integer? y)` with failing input: `<nil>`
 ;; {:instant 1450939196719,
 ;;  :ns "taoensso.truss.examples",
 ;;  :elidable? true,
@@ -148,8 +150,8 @@
 (comment
   (wrapped-ring-handler
     {:method :get :uri "/" :session {:user-name "Stu"}}) ; =>
-   ;; Invariant violation in `taoensso.truss.examples:136` [pred-form, val]:
-   ;; [(string? 42), 42]
+   ;; Invariant violation in `taoensso.truss.examples:136`.
+   ;; Test form `(string? 42)` with failing input: `42
    ;; {:*?data* {:ring-session {:user-name "Stu"}}, ; <--- This got included
    ;;  :elidable? true,
    ;;  :dt #inst "2015-12-28T05:57:49.759-00:00",

@@ -16,13 +16,13 @@
   Respects *assert* value so tests can be elided from production for zero
   runtime costs.
 
-  Provides a small, simple, flexible alternative to tools like core.typed,
-  prismatic/schema, etc.
+  Provides a small, simple, flexible feature subset to alternative tools like
+  clojure.spec, core.typed, prismatic/schema, etc.
 
     ;; Will throw a detailed error message on invariant violation:
     (fn my-fn [x] (str/trim (have string? x)))
 
-  May attach arbitrary debug info to assertion violations like:
+  You may attach arbitrary debug info to assertion violations like:
     `(have string? x :data {:my-arbitrary-debug-info \"foo\"})`
 
   See also `have?`, `have!`."
@@ -30,8 +30,8 @@
   [& args] `(-invariant :elidable nil ~(:line (meta &form)) ~@args))
 
 (defmacro have?
-  "Like `have` but returns `true` on successful tests. This can be handy for
-  use with :pre/:post conditions. Compare:
+  "Like `have` but returns `true` on successful tests. In particular, this
+  can be handy for use with :pre/:post conditions. Compare:
     (fn my-fn [x] {:post [(have  nil? %)]} nil) ; {:post [nil]} FAILS
     (fn my-fn [x] {:post [(have? nil? %)]} nil) ; {:post [true]} passes as intended"
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
@@ -48,9 +48,8 @@
   handy for semantic clarification and/or to improve multi-val performance
   when the return vals aren't necessary.
 
-  **WARNING**: Resist the temptation to use these in :pre/:post conds since
-  they're always subject to *assert* and will interfere with the intent of
-  the bang (`!`) here."
+  **WARNING**: Do NOT use in :pre/:post conds since those are ALWAYS subject
+  to *assert*, directly contradicting the intention of the bang (`!`) here."
   {:arglists '([pred (:in) x] [pred (:in) x & more-xs])}
   [& args] `(-invariant :assertion :truthy ~(:line (meta &form)) ~@args))
 

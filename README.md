@@ -344,9 +344,9 @@ Truss offers some shorthands for your convenience. **These are all optional**: t
 (have [:and integer? even? pos?] 6) ; => 6
 
 ;; Element of (checks for set containment)
-(have [:el #{:a :b :c :d nil}] :b) ; => :b
-(have [:el #{:a :b :c :d nil}] :b) ; => nil
-(have [:el #{:a :b :c :d nil}] :e) ; => Error
+(have [:el #{:a :b :c :d nil}] :b)  ; => :b
+(have [:el #{:a :b :c :d nil}] nil) ; => nil
+(have [:el #{:a :b :c :d nil}] :e)  ; => Error
 
 ;; Superset
 (have [:set>= #{:a :b}] #{:a :b :c}) ; => #{:a :b :c}

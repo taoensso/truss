@@ -4,7 +4,7 @@
 **[CHANGELOG]** | [API] | current [Break Version]:
 
 ```clojure
-[com.taoensso/truss "1.3.6"] ; Stable
+[com.taoensso/truss "1.3.7"] ; Stable
 ```
 
 > Please consider helping to [support my continued open-source Clojure/Script work]? 
@@ -59,7 +59,7 @@ The best general recommendation I can make is to try actually experiment with th
 Add the necessary dependency to your project:
 
 ```clojure
-[com.taoensso/truss "1.3.6"]
+[com.taoensso/truss "1.3.7"]
 ```
 
 And setup your namespace imports:

@@ -1,5 +1,13 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.3.7 - 2017 Feb 13
+
+```clojure
+[com.taoensso/truss "1.3.7"]
+```
+
+* Improved some docstrings
+
 ## v1.3.6 - 2016 Sep 7
 
 ```clojure

@@ -32,12 +32,12 @@
    :dev
    [:1.9 :test :server-jvm
     {:dependencies
-     [[org.clojure/clojurescript "1.9.473"]]
+     [[org.clojure/clojurescript "1.9.495"]]
 
      :plugins
      [;; These must be in :dev, Ref. https://github.com/lynaghk/cljx/issues/47:
       [com.keminglabs/cljx "0.6.0"]
-      [lein-cljsbuild      "1.1.3"]]}]}
+      [lein-cljsbuild      "1.1.5"]]}]}
 
   ;; :jar-exclusions [#"\.cljx|\.DS_Store"]
 

@@ -144,13 +144,22 @@
   ;; Cider unfortunately doesn't seem to print newlines in errors
   (str "Invariant violation in `" x1 ":" x2 "`. Test form `" x3 "` with failing input: `" x4 "`"))
 
+#+clj
+(defn- fast-pr-str
+  "Combination `with-out-str`, `pr`. Ignores *print-dup*."
+  [x]
+  (let [w (java.io.StringWriter.)]
+    (print-method x w)
+    (.toString      w)))
+
+(comment (enc/qb 1e5 (pr-str {:a :A}) (fast-pr-str {:a :A})))
+
 (deftype WrappedError [val])
 (defn -assertion-error [msg] #+clj (AssertionError. msg) #+cljs (js/Error. msg))
 (def  -dummy-val   #+clj (Object.) #+cljs (js-obj))
 (def  -dummy-error #+clj (Object.) #+cljs (js-obj))
 (defn -invar-violation!
   ;; - http://dev.clojure.org/jira/browse/CLJ-865 would be handy for line numbers.
-  ;; - Clojure 1.7+'s `pr-str` dumps a ton of error info that we don't want here.
   [elidable? ns-str ?line form val ?err ?data-fn]
   (when-let [error-fn *error-fn*]
     (error-fn ; Nb consumer must deref while bindings are still active
@@ -163,7 +172,12 @@
             (cond
               undefn-val? "<undefined>"
               (nil? val)  "<nil>"
-              :else       (str val) #_(pr-str val))
+              :else
+              #_(str    val)
+              #_(pr-str val)
+              ;; Consider setting *print-length* for lazy seqs?
+              #+clj  (fast-pr-str val)
+              #+cljs (pr-str      val))
 
             ?err
             (cond
@@ -174,7 +188,8 @@
 
             msg_
             (delay
-             (let [?err-str (when-let [e ?err] (str ?err) #_(pr-str ?err))
+             (let [;; Clj 1.7+ `pr-str` dumps a ton of error info that we don't want here
+                   ?err-str (when-let [e ?err] (str ?err) #_(pr-str ?err))
                    msg (fmt-err-msg ns-str line-str form-str val-str)]
                (cond
                  (not ?err)       msg

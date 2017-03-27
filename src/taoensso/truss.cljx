@@ -82,7 +82,9 @@
   (have? [:set<= [:a :b :c]] #{:a :b})
   (qb 10000
     (with-error-fn nil                  (have? string? 5))
-    (with-error-fn (fn [_] :truss/error) (have? string? 5))))
+    (with-error-fn (fn [_] :truss/error) (have? string? 5)))
+
+  (have string? (range 1000)))
 
 (comment
   ;; HotSpot is great with these:

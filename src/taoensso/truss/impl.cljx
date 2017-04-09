@@ -142,7 +142,7 @@
 
 (defn- fmt-err-msg [x1 x2 x3 x4]
   ;; Cider unfortunately doesn't seem to print newlines in errors
-  (str "Invariant violation in `" x1 ":" x2 "`. Test form `" x3 "` with failing input: `" x4 "`"))
+  (str "Invariant violation in `" x1 ":" x2 "`. Test form `" x3 "` failed against input val `" x4 "`."))
 
 #+clj
 (defn- fast-pr-str
@@ -169,8 +169,8 @@
             undefn-val? (instance? WrappedError val)
             val-str
             (cond
-              undefn-val? "<undefined>"
-              (nil? val)  "<nil>"
+              undefn-val? "<truss/undefined-val>"
+              (nil? val)  "<truss/nil>"
               :else
               #_(str    val)
               #_(pr-str val)
@@ -192,8 +192,8 @@
                    msg (fmt-err-msg ns-str line-str form-str val-str)]
                (cond
                  (not ?err)       msg
-                 undefn-val? (str msg       "\n`val` error: " ?err-str)
-                 :else       (str msg "\n`pred-form` error: " ?err-str))))
+                 undefn-val? (str msg " An error was thrown while evaluating input val: [" ?err-str "].")
+                 :else       (str msg " An error was thrown while evaluating test form: [" ?err-str "]."))))
 
             ?data
             (when-let [data-fn ?data-fn]
@@ -206,8 +206,8 @@
          :?line     ?line
          ;; :?form  (when-not (string? form) form)
          :form-str  form-str
-         :val       (if undefn-val? 'undefined/threw-error val)
-         :val-type  (if undefn-val? 'undefined/threw-error (type val))
+         :val       (if undefn-val? 'truss/undefined-val       val)
+         :val-type  (if undefn-val? 'truss/undefined-val (type val))
          :?data      ?data  ; Arbitrary user data, handy for debugging
          :*?data*   *?data* ; ''
          :?err      ?err

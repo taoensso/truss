@@ -64,6 +64,8 @@
   (have number? (do (println "eval1") 5)
                 (do (println "eval2") "bar")
                 (do (println "eval3") 10))
+  (have pos? "hello")
+  (have pos? (/ 1 0))
   (have nil? false)
   (have nil)
   (have false)

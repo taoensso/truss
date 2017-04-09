@@ -1,12 +1,21 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.5.0 - 2017 Apr 09
+
+```clojure
+[com.taoensso/truss "1.5.0"]
+```
+
+* [#8] **Fix**: provide a clear error message when val eval fails (@martinklepsch)
+* General improvements to help clarify error messages.
+
 ## v1.4.0 - 2017 Mar 27
 
 ```clojure
 [com.taoensso/truss "1.4.0"]
 ```
 
-* [#8] Show full record values in error messages (@martinklepsch)
+* [#8] **Fix**: show full record values in error messages (@martinklepsch)
 
 ## v1.3.7 - 2017 Feb 13
 

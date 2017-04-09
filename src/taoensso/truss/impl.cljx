@@ -156,7 +156,6 @@
 
 (deftype WrappedError [val])
 (defn -assertion-error [msg] #+clj (AssertionError. msg) #+cljs (js/Error. msg))
-(def  -dummy-val   #+clj (Object.) #+cljs (js-obj))
 (def  -dummy-error #+clj (Object.) #+cljs (js-obj))
 (defn -invar-violation!
   ;; - http://dev.clojure.org/jira/browse/CLJ-865 would be handy for line numbers.
@@ -167,7 +166,7 @@
       (let [instant     #+clj (java.util.Date.) #+cljs (js/Date.)
             line-str    (or ?line "?")
             form-str    (str form)
-            undefn-val? (identical? val -dummy-val)
+            undefn-val? (instance? WrappedError val)
             val-str
             (cond
               undefn-val? "<undefined>"

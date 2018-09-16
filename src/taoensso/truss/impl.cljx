@@ -97,6 +97,10 @@
         (    :el     :in) [`(fn [~'x]      (contains? (set* ~a1) ~'x))  false]
         (:not-el :not-in) [`(fn [~'x] (not (contains? (set* ~a1) ~'x))) false]
 
+        :n=               [`(fn [~'x] (=  (count ~'x) ~a1)) false]
+        :n>=              [`(fn [~'x] (>= (count ~'x) ~a1)) false]
+        :n<=              [`(fn [~'x] (<= (count ~'x) ~a1)) false]
+
         ;; Pred composition
         (let [self (fn [?pred] (when ?pred (-xpred ?pred)))
 

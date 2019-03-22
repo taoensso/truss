@@ -316,7 +316,9 @@
           `(-invar ~elidable? ~truthy? ~line ~pred ~?x1 ~?data-fn)
 
           ;; (have pred x1 x2 ...) -> [x1 x2 ...]
-          (mapv (fn [x] `(-invar ~elidable? ~truthy? ~line ~pred ~x ~?data-fn)) ?xs))
+          (if truthy?
+            `(do ~@(mapv (fn [x] `(-invar ~elidable? ~truthy? ~line ~pred ~x ~?data-fn)) ?xs) true)
+            (do    (mapv (fn [x] `(-invar ~elidable? ~truthy? ~line ~pred ~x ~?data-fn)) ?xs))))
 
         (if single-x?
 
@@ -328,9 +330,6 @@
 
           ;; (have? pred :in xs1 xs2 ...) -> [bool1 ...]
           ;; (have  pred :in xs1 xs2 ...) -> [xs1   ...]
-          (mapv
-            (fn [xs]
-              (if truthy?
-                `(taoensso.truss.impl/revery? ~in-fn ~xs)
-                `(taoensso.truss.impl/revery  ~in-fn ~xs)))
-            ?xs))))))
+          (if truthy?
+            `(do ~@(mapv (fn [xs] `(taoensso.truss.impl/revery? ~in-fn ~xs)) ?xs) true)
+            (do    (mapv (fn [xs] `(taoensso.truss.impl/revery  ~in-fn ~xs)) ?xs))))))))

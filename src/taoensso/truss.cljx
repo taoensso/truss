@@ -121,7 +121,18 @@
 
   (do
     (set! *assert* false)
-    (have? integer? 4.0)))
+    (have? integer? 4.0))
+
+  ;; Combinations: truthy?, single?, in? (8 combinations)
+  (do (def i1 1) (def v1 [1 2 3]))
+  (macroexpand '(have? integer?      1))
+  (macroexpand '(have? integer?      1 2 i1))
+  (macroexpand '(have? integer? :in [1 2 i1]))
+  (macroexpand '(have? integer? :in [1 2] [3 4 i1] v1))
+  (macroexpand '(have  integer?      1))
+  (macroexpand '(have  integer?      1 2 i1))
+  (macroexpand '(have  integer? :in [1 2 i1]))
+  (macroexpand '(have  integer? :in [1 2] [3 4 i1] v1)))
 
 ;;;; Utils
 

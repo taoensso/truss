@@ -35,8 +35,11 @@
       (try ~try-expr (catch js/Error  ~error-sym ~catch-expr) (finally ~finally-expr))
       (try ~try-expr (catch Throwable ~error-sym ~catch-expr) (finally ~finally-expr)))))
 
-(defn rsome   [pred coll] (reduce (fn [acc in] (when-let [p (pred in)] (reduced p))) nil coll))
-(defn revery? [pred coll] (reduce (fn [acc in] (if (pred in) true (reduced nil))) true coll))
+(defn rsome   [pred coll]       (reduce (fn [acc in] (when-let [p (pred in)] (reduced p))) nil coll))
+(defn revery? [pred coll]       (reduce (fn [acc in] (if (pred in) true (reduced nil))) true coll))
+(defn revery  [pred coll] (when (reduce (fn [acc in] (if (pred in) true (reduced nil))) true coll) coll))
+
+(comment (revery integer? [1 2 3]) (revery integer? nil))
 
 #+cljs (defn ^boolean some? [x] (if (nil? x) false true))
 #+clj
@@ -297,9 +300,9 @@
                      [(first args) nil]
                      (if (nnext args) [nil (next args)] [(second args) nil]))
         single-x?  (nil? ?xs)
-        map-fn     (if truthy?
-                     'taoensso.truss.impl/revery?
-                     'clojure.core/mapv)]
+        in-fn
+        `(fn [~'__in] ; Will (necessarily) lose exact form
+           (-invar ~elidable? ~truthy? ~line ~pred ~'__in ~?data-fn))]
 
     (if elide?
       (if truthy?
@@ -316,17 +319,18 @@
           (mapv (fn [x] `(-invar ~elidable? ~truthy? ~line ~pred ~x ~?data-fn)) ?xs))
 
         (if single-x?
-          ;; (have  pred :in xs) -> xs
-          ;; (have? pred :in xs) -> bool
-          `(~map-fn
-             (fn [~'__in] ; Will (necessarily) lose exact form
-               (-invar ~elidable? ~truthy? ~line ~pred ~'__in ~?data-fn)) ~?x1)
 
-          ;; (have  pred :in xs1 xs2 ...) -> [xs1   ...]
+          ;; (have? pred :in xs) -> bool
+          ;; (have  pred :in xs) -> xs
+          (if truthy?
+            `(taoensso.truss.impl/revery? ~in-fn ~?x1)
+            `(taoensso.truss.impl/revery  ~in-fn ~?x1))
+
           ;; (have? pred :in xs1 xs2 ...) -> [bool1 ...]
+          ;; (have  pred :in xs1 xs2 ...) -> [xs1   ...]
           (mapv
             (fn [xs]
-              `(~map-fn
-                 (fn [~'__in] (-invar ~elidable? ~truthy? ~line ~pred ~'__in ~?data-fn))
-                 ~xs))
+              (if truthy?
+                `(taoensso.truss.impl/revery? ~in-fn ~xs)
+                `(taoensso.truss.impl/revery  ~in-fn ~xs)))
             ?xs))))))

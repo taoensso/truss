@@ -4,7 +4,8 @@
 **[CHANGELOG]** | [API] | current [Break Version]:
 
 ```clojure
-[com.taoensso/truss "1.5.0"] ; Stable
+[com.taoensso/truss "1.6.0-RC1"] ; See CHANGELOG for details
+[com.taoensso/truss "1.5.0"]     ; Stable
 ```
 
 > Please consider helping to [support my continued open-source Clojure/Script work]? 

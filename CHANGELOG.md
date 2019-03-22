@@ -1,5 +1,16 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.6.0-RC1 - 2019 Mar 22
+
+```clojure
+[com.taoensso/truss "1.6.0-RC1"]
+```
+
+* [New] Add special cardinality predicates: `:n=`, `:n>=`, `:n<=`
+* [Change] [#9] Return verbatim input/s on successful :in
+* [Fix] `have?` should return true during elision
+* [Implementation] Micro optimization: avoid unnecessary vector creation for multi-x `have?`
+
 ## v1.5.0 - 2017 Apr 09
 
 ```clojure

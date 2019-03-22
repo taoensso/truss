@@ -302,7 +302,9 @@
                      'clojure.core/mapv)]
 
     (if elide?
-      (if single-x? ?x1 (vec ?xs))
+      (if truthy?
+        true
+        (if single-x? ?x1 (vec ?xs)))
 
       (if-not in?
 

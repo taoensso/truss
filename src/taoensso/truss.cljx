@@ -117,7 +117,11 @@
 
   ((fn [x]
      (let [a "a" b "b"]
-       (have string? x :data {:env (enc/get-env)}))) 5))
+       (have string? x :data {:env (enc/get-env)}))) 5)
+
+  (do
+    (set! *assert* false)
+    (have? integer? 4.0)))
 
 ;;;; Utils
 

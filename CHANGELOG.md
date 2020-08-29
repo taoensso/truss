@@ -1,5 +1,29 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.6.0 - 2020 Aug 29
+
+```clojure
+[com.taoensso/truss "1.6.0"]
+```
+
+> Minor feature release. _Should_ be non-breaking.
+> See [here](https://github.com/ptaoussanis/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
+
+Identical to `1.6.0-RC1`.
+
+#### New since `1.5.0`
+
+* [New] Add special cardinality predicates: `:n=`, `:n>=`, `:n<=`
+
+#### Changes since `1.5.0`
+
+* [#9] Return verbatim input/s on successful :in
+* Micro optimization: avoid unnecessary vector creation for multi-x `have?`
+
+#### Fixes since `1.5.0`
+
+* `have?` should return true during elision
+
 ## v1.6.0-RC1 - 2019 Mar 22
 
 ```clojure

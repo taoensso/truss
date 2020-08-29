@@ -13,7 +13,7 @@
                 }
 
   :dependencies
-  [[org.clojure/clojure "1.5.1"]]
+  []
 
   :plugins
   [[lein-pprint  "1.2.0"]
@@ -23,6 +23,8 @@
   :profiles
   {;; :default [:base :system :user :provided :dev]
    :server-jvm {:jvm-opts ^:replace ["-server"]}
+   :provided {:dependencies [[org.clojure/clojure       "1.5.1"]
+                             [org.clojure/clojurescript "1.10.520"]]}
    :1.5  {:dependencies [[org.clojure/clojure "1.5.1"]]}
    :1.6  {:dependencies [[org.clojure/clojure "1.6.0"]]}
    :1.7  {:dependencies [[org.clojure/clojure "1.7.0"]]}
@@ -32,10 +34,7 @@
    :test {:dependencies [[org.clojure/test.check "0.9.0"]]}
    :dev
    [:1.10 :test :server-jvm
-    {:dependencies
-     [[org.clojure/clojurescript "1.10.520"]]
-
-     :plugins
+    {:plugins
      [;; These must be in :dev, Ref. https://github.com/lynaghk/cljx/issues/47:
       [com.keminglabs/cljx "0.6.0"]
       [lein-cljsbuild      "1.1.7"]]}]}
@@ -88,4 +87,6 @@
    "deploy-lib" ["do" "build-once," "deploy" "clojars," "install"]
    "start-dev"  ["with-profile" "+server-jvm" "repl" ":headless"]}
 
-  :repositories {"sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/"})
+  :repositories
+  {"sonatype-oss-public"
+   "https://oss.sonatype.org/content/groups/public/"})

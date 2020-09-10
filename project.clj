@@ -7,85 +7,61 @@
             :distribution :repo
             :comments "Same as Clojure"}
   :min-lein-version "2.3.3"
-  :global-vars {*warn-on-reflection* true
-                *assert*             true
-                ;; *unchecked-math*  :warn-on-boxed
-                }
+  :global-vars
+  {*warn-on-reflection* true
+   *assert*             true
+   *unchecked-math*     false #_:warn-on-boxed}
 
   :dependencies
   []
 
   :plugins
-  [[lein-pprint  "1.2.0"]
-   [lein-ancient "0.6.15"]
-   [lein-codox   "0.10.6"]]
+  [[lein-pprint    "1.3.2"]
+   [lein-ancient   "0.7.0"]
+   [lein-codox     "0.10.8"]
+   [lein-cljsbuild "1.1.8"]]
 
   :profiles
   {;; :default [:base :system :user :provided :dev]
    :server-jvm {:jvm-opts ^:replace ["-server"]}
-   :provided {:dependencies [[org.clojure/clojure       "1.5.1"]
-                             [org.clojure/clojurescript "1.10.520"]]}
-   :1.5  {:dependencies [[org.clojure/clojure "1.5.1"]]}
-   :1.6  {:dependencies [[org.clojure/clojure "1.6.0"]]}
-   :1.7  {:dependencies [[org.clojure/clojure "1.7.0"]]}
-   :1.8  {:dependencies [[org.clojure/clojure "1.8.0"]]}
-   :1.9  {:dependencies [[org.clojure/clojure "1.9.0"]]}
-   :1.10 {:dependencies [[org.clojure/clojure "1.10.0"]]}
-   :test {:dependencies [[org.clojure/test.check "0.9.0"]]}
-   :dev
-   [:1.10 :test :server-jvm
-    {:plugins
-     [;; These must be in :dev, Ref. https://github.com/lynaghk/cljx/issues/47:
-      [com.keminglabs/cljx "0.6.0"]
-      [lein-cljsbuild      "1.1.7"]]}]}
+   :provided {:dependencies [[org.clojure/clojurescript "1.11.60"]
+                             [org.clojure/clojure       "1.11.1"]]}
+   :c1.11    {:dependencies [[org.clojure/clojure       "1.11.1"]]}
+   :c1.10    {:dependencies [[org.clojure/clojure       "1.10.3"]]}
+   :c1.9     {:dependencies [[org.clojure/clojure       "1.9.0"]]}
 
-  ;; :jar-exclusions [#"\.cljx|\.DS_Store"]
+   :depr     {:jvm-opts ["-Dtaoensso.elide-deprecated=true"]}
+   :dev      [:c1.11 :test :server-jvm :depr]
+   :test     {:dependencies [[org.clojure/test.check    "1.1.1"]]}}
 
-  :source-paths ["src" "target/classes"]
-  :test-paths   ["src" "test" "target/test-classes"]
-
-  :cljx
-  {:builds
-   [{:source-paths ["src"]        :rules :clj  :output-path "target/classes"}
-    {:source-paths ["src"]        :rules :cljs :output-path "target/classes"}
-    {:source-paths ["src" "test"] :rules :clj  :output-path "target/test-classes"}
-    {:source-paths ["src" "test"] :rules :cljs :output-path "target/test-classes"}]}
+  :test-paths ["test" #_"src"]
 
   :cljsbuild
-  {:test-commands {}
+  {:test-commands {"node" ["node" "target/test.js"]}
    :builds
-   [{:id "main"
-     :source-paths   ["src" "target/classes"]
-     ;; :notify-command ["terminal-notifier" "-title" "cljsbuild" "-message"]
-     :compiler       {:output-to "target/main.js"
-                      :optimizations :advanced
-                      :pretty-print false}}
-    {:id "tests"
-     :source-paths   ["src" "target/classes" "test" "target/test-classes"]
-     ;; :notify-command []
-     :compiler       {:output-to "target/tests.js"
-                      :optimizations :whitespace
-                      :pretty-print true
-                      :main "taoensso.truss.tests"}}]}
+   [{:id :main
+     :source-paths ["src"]
+     :compiler
+     {:output-to "target/main.js"
+      :optimizations :advanced}}
 
-  :auto-clean false
-  :prep-tasks [["cljx" "once"] "javac" "compile"]
-
-  :codox
-  {:language :clojure ; [:clojure :clojurescript] ; No support?
-   :source-paths ["target/classes"]
-   :source-uri
-   {#"target/classes" "https://github.com/ptaoussanis/truss/blob/master/src/{classpath}x#L{line}"
-    #".*"             "https://github.com/ptaoussanis/truss/blob/master/{filepath}#L{line}"}}
+    {:id :test
+     :source-paths ["src" "test"]
+     :compiler
+     {:output-to "target/test.js"
+      :target :nodejs
+      :optimizations :simple}}]}
 
   :aliases
-  {"test-all"   ["do" "clean," "cljx" "once,"
-                 "with-profile" "+1.10:+1.9:+1.8:+1.7:+1.6:+1.5" "test,"
-                 ;; "with-profile" "+test" "cljsbuild" "test"
-                 ]
-   "build-once" ["do" "clean," "cljx" "once," "cljsbuild" "once" "main"]
-   "deploy-lib" ["do" "build-once," "deploy" "clojars," "install"]
-   "start-dev"  ["with-profile" "+server-jvm" "repl" ":headless"]}
+  {"start-dev"  ["with-profile" "+dev" "repl" ":headless"]
+   "deploy-lib" ["do" ["build-once"] ["deploy" "clojars"] ["install"]]
+   "build-once" ["do" ["clean"] "cljsbuild" "once"]
+
+   "test-cljs"  ["with-profile" "+test" "cljsbuild" "test"]
+   "test-all"
+   ["do" ["clean"]
+    "with-profile" "+c1.11:+c1.10:+c1.9" "test,"
+    "test-cljs"]}
 
   :repositories
   {"sonatype-oss-public"

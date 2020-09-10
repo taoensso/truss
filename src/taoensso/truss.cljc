@@ -1,10 +1,9 @@
 (ns taoensso.truss
   "An opinionated assertions API for Clojure/Script."
   {:author "Peter Taoussanis (@ptaoussanis)"}
-  #?(:clj  (:require [taoensso.truss.impl :as impl :refer        [-invariant]])
-     :cljs (:require [taoensso.truss.impl :as impl :refer-macros [-invariant]])))
+  (:require [taoensso.truss.impl :as impl :refer [-invariant]]))
 
-(comment (require '[taoensso.encore :as enc :refer (qb)]))
+(comment (require '[taoensso.encore :as enc]))
 
 ;;;; Core API
 
@@ -83,7 +82,7 @@
   (have? [:set>= #{:a :b}]    [:a :b :c])
   (have? [:set<= [:a :b :c]] #{:a :b})
   (have? [:n= 3] [:a :b :c :d])
-  (qb 10000
+  (enc/qb 1e5
     (with-error-fn nil                  (have? string? 5))
     (with-error-fn (fn [_] :truss/error) (have? string? 5)))
 
@@ -91,7 +90,7 @@
 
 (comment
   ;; HotSpot is great with these:
-  (qb 10000
+  (enc/qb 1e4
     (string? "a")
     (have?   "a")
     (have            string?  "a" "b" "c")
@@ -102,7 +101,7 @@
   ;; [0.82 1.75  7.57 27.05     ] ; 3rd gen (lean macro form)
   ;; [0.4  0.47  1.3  1.77  1.53] ; 4th gen (macro preds)
 
-  (qb 10000
+  (enc/qb 1e4
     (have  string? :in ["foo" "bar" "baz"])
     (have? string? :in ["foo" "bar" "baz"]))
 

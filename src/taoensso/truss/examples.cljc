@@ -1,7 +1,6 @@
 (ns taoensso.truss.examples
   {:author "Peter Taoussanis (@ptaoussanis)"}
-  #?(:clj  (:require [taoensso.truss :as truss :refer        [have have! have?]])
-     :cljs (:require [taoensso.truss :as truss :refer-macros [have have! have?]])))
+  (:require [taoensso.truss :as truss :refer [have have! have?]]))
 
 ;;;; First API example
 

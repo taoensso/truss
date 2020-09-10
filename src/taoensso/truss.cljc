@@ -1,8 +1,8 @@
 (ns taoensso.truss
   "An opinionated assertions API for Clojure/Script."
   {:author "Peter Taoussanis (@ptaoussanis)"}
-  #+clj  (:require [taoensso.truss.impl :as impl :refer        [-invariant]])
-  #+cljs (:require [taoensso.truss.impl :as impl :refer-macros [-invariant]]))
+  #?(:clj  (:require [taoensso.truss.impl :as impl :refer        [-invariant]])
+     :cljs (:require [taoensso.truss.impl :as impl :refer-macros [-invariant]])))
 
 (comment (require '[taoensso.encore :as enc :refer (qb)]))
 
@@ -156,8 +156,8 @@
 (defn set-error-fn!
   "Sets the root (fn [data-map-delay]) called on invariant violations."
   [f]
-  #+cljs (set!             impl/*error-fn*        (-error-fn f))
-  #+clj  (alter-var-root #'impl/*error-fn* (fn [_] (-error-fn f))))
+  #?(:cljs (set!             impl/*error-fn*        (-error-fn f))
+     :clj  (alter-var-root #'impl/*error-fn* (fn [_] (-error-fn f)))))
 
 (defmacro with-error-fn [f & body]
   `(binding [impl/*error-fn* ~(-error-fn f)] ~@body))

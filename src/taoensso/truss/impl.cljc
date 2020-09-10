@@ -2,10 +2,10 @@
   "Private implementation details."
   (:require [clojure.set :as set])
   (:refer-clojure :exclude [some?])
-  #+cljs
-  (:require-macros
-   [taoensso.truss.impl :as impl-macros
-    :refer [compile-if catching -invar]]))
+  #?(:cljs
+     (:require-macros
+      [taoensso.truss.impl :as impl-macros
+       :refer [compile-if catching -invar]])))
 
 (comment (require '[taoensso.encore :as enc :refer [qb]]))
 
@@ -41,21 +41,21 @@
 
 (comment (revery integer? [1 2 3]) (revery integer? nil))
 
-#+cljs (defn ^boolean some? [x] (if (nil? x) false true))
-#+clj
-(defn some?
-  {:inline (fn [x] `(if (identical? ~x nil) false true))}
-  [x] (if (identical? x nil) false true))
+#?(:cljs (defn ^boolean some? [x] (if (nil? x) false true))
+   :clj
+   (defn some?
+     {:inline (fn [x] `(if (identical? ~x nil) false true))}
+     [x] (if (identical? x nil) false true)))
 
 (compile-if (completing (fn [])) ; Clojure 1.7+
   (def  set* set)
   (defn set* [x] (if (set? x) x (set x))))
 
 (do
-  (defn #+clj ks=      #+cljs ^boolean ks=      [ks m] (=             (set (keys m)) (set* ks)))
-  (defn #+clj ks<=     #+cljs ^boolean ks<=     [ks m] (set/subset?   (set (keys m)) (set* ks)))
-  (defn #+clj ks>=     #+cljs ^boolean ks>=     [ks m] (set/superset? (set (keys m)) (set* ks)))
-  (defn #+clj ks-nnil? #+cljs ^boolean ks-nnil? [ks m] (revery?     #(some? (get m %))     ks)))
+  (defn #?(:clj ks=      :cljs ^boolean ks=)      [ks m] (=             (set (keys m)) (set* ks)))
+  (defn #?(:clj ks<=     :cljs ^boolean ks<=)     [ks m] (set/subset?   (set (keys m)) (set* ks)))
+  (defn #?(:clj ks>=     :cljs ^boolean ks>=)     [ks m] (set/superset? (set (keys m)) (set* ks)))
+  (defn #?(:clj ks-nnil? :cljs ^boolean ks-nnil?) [ks m] (revery?     #(some? (get m %))     ks)))
 
 ;;;; Truss
 
@@ -70,17 +70,17 @@
 (defn- non-throwing?
   "Returns true for some common preds that are naturally non-throwing."
   [p]
-  #+cljs false ; Would need `resolve`; other ideas?
-  #+clj
-  (or
-    (keyword? p)
-    (map?     p)
-    (set?     p)
-    (boolean
-      (#{nil? #_some? string? integer? number? symbol? keyword? float?
-         set? vector? coll? list? ifn? fn? associative? sequential? delay?
-         sorted? counted? reversible? true? false? identity not boolean}
-        (if (symbol? p) (when-let [v (resolve p)] @v) p)))))
+  #?(:cljs false ; Would need `resolve`; other ideas?
+     :clj
+     (or
+       (keyword? p)
+       (map?     p)
+       (set?     p)
+       (boolean
+         (#{nil? #_some? string? integer? number? symbol? keyword? float?
+            set? vector? coll? list? ifn? fn? associative? sequential? delay?
+            sorted? counted? reversible? true? false? identity not boolean}
+           (if (symbol? p) (when-let [v (resolve p)] @v) p))))))
 
 (defn -xpred
   "Expands any special predicate forms and returns [<expanded-pred> <non-throwing?>]."
@@ -151,26 +151,26 @@
   ;; Cider unfortunately doesn't seem to print newlines in errors
   (str "Invariant violation in `" x1 ":" x2 "`. Test form `" x3 "` failed against input val `" x4 "`."))
 
-#+clj
-(defn- fast-pr-str
-  "Combination `with-out-str`, `pr`. Ignores *print-dup*."
-  [x]
-  (let [w (java.io.StringWriter.)]
-    (print-method x w)
-    (.toString      w)))
+#?(:clj
+   (defn- fast-pr-str
+     "Combination `with-out-str`, `pr`. Ignores *print-dup*."
+     [x]
+     (let [w (java.io.StringWriter.)]
+       (print-method x w)
+       (.toString      w))))
 
 (comment (enc/qb 1e5 (pr-str {:a :A}) (fast-pr-str {:a :A})))
 
 (deftype WrappedError [val])
-(defn -assertion-error [msg] #+clj (AssertionError. msg) #+cljs (js/Error. msg))
-(def  -dummy-error #+clj (Object.) #+cljs (js-obj))
+(defn -assertion-error [msg] #?(:clj (AssertionError. msg) :cljs (js/Error. msg)))
+(def  -dummy-error #?(:clj (Object.) :cljs (js-obj)))
 (defn -invar-violation!
   ;; - http://dev.clojure.org/jira/browse/CLJ-865 would be handy for line numbers.
   [elidable? ns-str ?line form val ?err ?data-fn]
   (when-let [error-fn *error-fn*]
     (error-fn ; Nb consumer must deref while bindings are still active
      (delay
-      (let [instant     #+clj (java.util.Date.) #+cljs (js/Date.)
+      (let [instant     #?(:clj (java.util.Date.) :cljs (js/Date.))
             line-str    (or ?line "?")
             form-str    (str form)
             undefn-val? (instance? WrappedError val)
@@ -182,8 +182,8 @@
               #_(str    val)
               #_(pr-str val)
               ;; Consider setting *print-length* for lazy seqs?
-              #+clj  (fast-pr-str val)
-              #+cljs (pr-str      val))
+              #?(:clj  (fast-pr-str val)
+                 :cljs (pr-str      val)))
 
             ?err
             (cond

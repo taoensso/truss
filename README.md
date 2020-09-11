@@ -1,21 +1,15 @@
 <a href="https://www.taoensso.com" title="More stuff by @ptaoussanis at www.taoensso.com">
-<img src="https://www.taoensso.com/taoensso-open-source.png" alt="Taoensso open-source" width="400"/></a>
+<img src="https://www.taoensso.com/taoensso-open-source.png" alt="Taoensso open-source" width="350"/></a>
 
-**[CHANGELOG]** | [API] | current [Break Version]:
+**[CHANGELOG][]** | [API][] | current [Break Version][]:
 
 ```clojure
-[com.taoensso/truss "1.6.0"] ; Stable, see CHANGELOG for details
+[com.taoensso/truss "1.6.0"] ; Mature/stable (basically "done")
 ```
 
-> Please consider helping to [support my continued open-source Clojure/Script work]? 
-> 
-> Even small contributions can add up + make a big difference to help sustain my time writing, maintaining, and supporting Nippy and other Clojure/Script libraries. **Thank you!**
->
-> \- Peter Taoussanis
+> See [here](https://taoensso.com/clojure/backers) if you're interested in helping support my open-source work, thanks! - Peter Taoussanis
 
-# Truss
-
-### Great Clojure/Script error messages where you need them most
+# Truss: great Clojure/Script error messages where you need them most
 
 **Or**: A **lightweight** alternative to **static typing**, [clojure.spec], [core.typed], [@plumatic/schema], etc.
 
@@ -23,7 +17,7 @@
 
 **Truss** is a **micro library** for Clojure/Script that provides fast, flexible **runtime condition assertions** with **great error messages**. It can be used to get many of the most important benefits of **static/gradual typing** without the usual rigidity or onboarding costs.
 
-![Hero]
+![Hero][]
 
 > A doubtful friend is worse than a certain enemy. Let a man be one thing or the other, and we then know how to meet him. - **Aesop**
 
@@ -35,31 +29,34 @@
  * Minimal (or zero) runtime performance cost.
  * A practical **80% solution** (focus on **improving error messages**).
 
-## How does it compare to [clojure.spec], [core.typed], [@plumatic/schema]?
+## How does it compare to alternatives?
 
-This is unfortunately a _really_ tough question to answer briefly. It comes down to trade-offs.
+There are several good choices when it comes to providing type and/or structural information to Clojure/Script code, including. [clojure.spec][], [core.typed][], [@plumatic/schema][], [@marick/structural-typing][], etc.
 
-Very superficially, very **subjectively**:
+How these compare is a tough question to answer briefly since these projects may have different objectives, and sometimes offer very different trade-offs.
 
-Library      | Ease of setup | Ease of use | Features | Favourite aspect/s
------------- | ------------- | ----------- | -------- | ------------------
-clojure.spec | ★★           | ★★         | ★★½     | Official, wide applicability (docs, generative tests, etc.)
-core.typed   | ★             | ★          | ★★★     | Compile-time safety, most rigorous
-Schema       | ★★½          | ★★½       | ★        | Simplicity/power balance, widely adopted
-**Truss**    | ★★★          | ★★★       | ★        | Simplicity/power balance, API
+Some of the variables to consider might include:
 
-Re: performance - Truss consistently [outperforms](http://muhuk.github.io/validation-benchmark/) similar libs, though I'd suggest that speed is probably one of the least interesting factors to consider when choosing a lib to use.
+- **Cost of getting started** - e.g. is it cheap/easy to cover an initial/small subset of code?
+- **Ease of learning** - e.g. how complex is the syntax/API for newcomers?
+- **Flexibility at scale** - e.g. likelihood of encountering frustrating limitations?
+- **Performance** - e.g. impact on testing/development/production runtimes?
 
-The best general recommendation I can make is to try actually experiment with the options that seem appealing. Nothing beats hands-on experience for deciding what best fits your particular needs and tastes.
+To make a useful comparison, ultimately one might want some kind of `relevant-power ÷ relevant-cost`, relative to some specific context and objectives.
 
-> See also [@marick/structural-typing] for another structural typing option by the creator of [Midje] :-)
+For my part, I'm really pleased with the balance of particular trade-offs that Truss offers. As of 2022, it continues to be my preferred/default choice for a wide variety of common cases in projects large and small.
+
+The best general recommendation I can make is to try actually experiment with the options that seem appealing to you. Nothing beats hands-on experience for deciding what best fits your particular needs and tastes.
+
+See [here](https://github.com/ptaoussanis/truss#motivation) for a discussion of my own objectives/priorities with Truss.
 
 ## Quickstart
 
 Add the necessary dependency to your project:
 
 ```clojure
-[com.taoensso/truss "1.6.0"]
+Leiningen: [com.taoensso/truss "1.6.0"] ; or
+deps.edn:   com.taoensso/truss {:mvn/version "1.6.0"}
 ```
 
 And setup your namespace imports:
@@ -134,9 +131,11 @@ Thankfully, this list is almost exhaustive; in my experience these few causes of
 
 So **Truss** targets these issues with a **practical 80% solution** that emphasizes:
 
- 1. Ease of adoption (incl. partial/precision adoption)
- 2. Ease of use
- 3. Flexibility
+ 1. **Ease of adoption** (incl. partial/precision/gradual adoption)
+ 2. **Ease of use** (non-invasive API, trivial composition, etc.)
+ 3. **Flexibility** (scales well to large, complex systems)
+ 4. **Speed** (blazing fast => can use in production, in speed-critical code)
+ 5. **Simplicity** (lean API, zero dependencies, tiny codebase)
 
 The first is particularly important since the need for assertions in a good Clojure codebase is surprisingly _rare_.
 
@@ -389,7 +388,7 @@ By default, Truss just throws an **exception** on any invariant violations. You 
 Some common usage ideas:
 
  * Use `with-error-fn` to capture violations during unit testing
- * Use `set-error-fn!` to _log_ violations with something like [Timbre]
+ * Use `set-error-fn!` to _log_ violations with something like [Timbre][]
 
 #### Should I annotate my whole API?
 
@@ -450,24 +449,21 @@ If you're using Leiningen, you can add the following to your `project.clj`:
 
 ## Contacting me / contributions
 
-Please use the project's [GitHub issues page] for all questions, ideas, etc. **Pull requests welcome**. See the project's [GitHub contributors page] for a list of contributors.
+Please use the project's [GitHub issues page][] for all questions, ideas, etc. **Pull requests welcome**. See the project's [GitHub contributors page][] for a list of contributors.
 
-Otherwise, you can reach me at [Taoensso.com]. Happy hacking!
+Otherwise, you can reach me at [Taoensso.com][]. Happy hacking!
 
-\- [Peter Taoussanis]
+\- [Peter Taoussanis][Taoensso.com]
 
 ## License
 
-Distributed under the [EPL v1.0] \(same as Clojure).  
-Copyright &copy; 2015-2020 [Peter Taoussanis].
+Distributed under the [EPL v1.0][] \(same as Clojure).  
+Copyright &copy; 2015-2022 [Peter Taoussanis][Taoensso.com].
 
 <!--- Standard links -->
 [Taoensso.com]: https://www.taoensso.com
-[Peter Taoussanis]: https://www.taoensso.com
-[@ptaoussanis]: https://www.taoensso.com
-[More by @ptaoussanis]: https://www.taoensso.com
 [Break Version]: https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md
-[support my continued open-source Clojure/Script work]: http://taoensso.com/clojure/backers
+[backers]: https://taoensso.com/clojure/backers
 
 <!--- Standard links (repo specific) -->
 [CHANGELOG]: https://github.com/ptaoussanis/truss/releases

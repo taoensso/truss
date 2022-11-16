@@ -146,4 +146,4 @@
 (defmacro with-dynamic-assertion-data
   ^{:deprecated "v1.7.0 (2022-11-16)"
     :doc "Prefer `with-data`"}
-  [data & body])
+  [data & body] `(binding [impl/*data* ~data] ~@body))

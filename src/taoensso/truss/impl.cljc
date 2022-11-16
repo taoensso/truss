@@ -147,43 +147,46 @@
   (-xpred [:or string? integer? [:and number? pos?]])     ; f
   )
 
-(defn- fmt-err-msg [x1 x2 x3 x4]
-  ;; Cider unfortunately doesn't seem to print newlines in errors
-  (str "Invariant violation in `" x1 ":" x2 "`. Test form `" x3 "` failed against input val `" x4 "`."))
+;; #?(:clj
+;;    (defn- fast-pr-str
+;;      "Combination `with-out-str`, `pr`. Ignores *print-dup*."
+;;      [x]
+;;      (let [w (java.io.StringWriter.)]
+;;        (print-method x w)
+;;        (.toString      w))))
 
-#?(:clj
-   (defn- fast-pr-str
-     "Combination `with-out-str`, `pr`. Ignores *print-dup*."
-     [x]
-     (let [w (java.io.StringWriter.)]
-       (print-method x w)
-       (.toString      w))))
+;; (comment (enc/qb 1e5 (pr-str {:a :A}) (fast-pr-str {:a :A})))
 
-(comment (enc/qb 1e5 (pr-str {:a :A}) (fast-pr-str {:a :A})))
+(defn- error-message
+  ;; Temporary, to support Clojure 1.9
+  ;; Clojure 1.10+ now has `ex-message`
+  [x]
+  #?(:clj  (when (instance? Throwable x) (.getMessage ^Throwable x))
+     :cljs (when (instance? js/Error  x) (.-message              x))))
 
 (deftype WrappedError [val])
 (defn -assertion-error [msg] #?(:clj (AssertionError. msg) :cljs (js/Error. msg)))
 (def  -dummy-error #?(:clj (Object.) :cljs (js-obj)))
 (defn -invar-violation!
   ;; - http://dev.clojure.org/jira/browse/CLJ-865 would be handy for line numbers.
-  [elidable? ns-str ?line form val ?err ?data-fn]
+  [elidable? ns-sym ?line pred arg ?err ?data-fn]
   (when-let [error-fn *error-fn*]
     (error-fn ; Nb consumer must deref while bindings are still active
      (delay
       (let [instant     #?(:clj (java.util.Date.) :cljs (js/Date.))
-            line-str    (or ?line "?")
-            form-str    (str form)
-            undefn-val? (instance? WrappedError val)
-            val-str
-            (cond
-              undefn-val? "<truss/undefined-val>"
-              (nil? val)  "<truss/nil>"
-              :else
-              #_(str    val)
-              #_(pr-str val)
-              ;; Consider setting *print-length* for lazy seqs?
-              #?(:clj  (fast-pr-str val)
-                 :cljs (pr-str      val)))
+            undefn-arg? (instance? WrappedError arg)
+            arg-val     (if undefn-arg? 'truss/undefined-arg       arg)
+            arg-type    (if undefn-arg? 'truss/undefined-arg (type arg))
+
+            ;; arg-str
+            ;; (cond
+            ;;   undefn-arg? "<truss/undefined-arg>"
+            ;;   (nil? arg)  "<truss/nil>"
+            ;;   :else
+            ;;   (binding [*print-readably* false
+            ;;             *print-length*   3]
+            ;;     #?(:clj  (fast-pr-str arg)
+            ;;        :cljs (pr-str      arg))))
 
             ?err
             (cond
@@ -194,50 +197,60 @@
 
             msg_
             (delay
-             (let [;; Clj 1.7+ `pr-str` dumps a ton of error info that we don't want here
-                   ?err-str (when-let [e ?err] (str ?err) #_(pr-str ?err))
-                   msg (fmt-err-msg ns-str line-str form-str val-str)]
-               (cond
-                 (not ?err)       msg
-                 undefn-val? (str msg " An error was thrown while evaluating input val: [" ?err-str "].")
-                 :else       (str msg " An error was thrown while evaluating test form: [" ?err-str "]."))))
+              (let [msg (str "Invariant failed at " ns-sym (when ?line (str "|" ?line)) ": "
+                          (list pred arg-val))]
+
+                (if-let [err ?err]
+                  (let [err-msg #_(ex-message err) (error-message err)]
+                    (if undefn-arg?
+                      (str msg "\r\n\r\nError evaluating arg: "  err-msg)
+                      (str msg "\r\n\r\nError evaluating pred: " err-msg)))
+                  msg)))
 
             ?data
-            (when-let [data-fn ?data-fn]
-              (catching (data-fn) e
-                {:data-error e}))]
+            (let [dynamic *data*
+                  arg
+                  (when-let [data-fn ?data-fn]
+                    (catching (data-fn) e
+                      {:truss/error e}))]
 
-        {:dt        instant
-         :msg_      msg_
-         :ns-str    ns-str
-         :?line     ?line
-         ;; :?form  (when-not (string? form) form)
-         :form-str  form-str
-         :val       (if undefn-val? 'truss/undefined-val       val)
-         :val-type  (if undefn-val? 'truss/undefined-val (type val))
-         :?data     ?data  ; Arbitrary user data, handy for debugging
-         :*?data*   *data* ; ''
-         :?err      ?err
-         :*assert*  *assert*
-         :elidable? elidable?})))))
+              (when (or   dynamic      arg)
+                {:dynamic dynamic :arg arg}))
+
+            output
+            {:msg_  msg_
+             :dt    instant
+             :pred  pred
+             :arg   {:value arg-val
+                     :type  arg-type}
+
+             :loc {:ns ns-sym :line ?line}
+             :env {:elidable?  elidable?
+                   :*assert*   *assert*}}
+
+            output (if-let [v ?data] (assoc output :data v) output)
+            output (if-let [v ?err]  (assoc output :err  v) output)]
+
+        output)))))
+
+(defn- ns-sym [] (symbol (str *ns*)))
 
 (defmacro -invar
   "Written to maximize performance + minimize post Closure+gzip Cljs code size."
   [elidable? truthy? line pred x ?data-fn]
-  (let [form #_(list pred x) (str (list pred x)) ; Better expansion gzipping
-        non-throwing-x? (not (list? x)) ; Pre-evaluated (common case)
+  (let [non-throwing-x? (not (list? x)) ; Pre-evaluated (common case)
         [pred* non-throwing-pred?] (-xpred pred)]
 
     (if non-throwing-x? ; Common case
       (if non-throwing-pred? ; Common case
         `(if (~pred* ~x)
            ~(if truthy? true x)
-           (-invar-violation! ~elidable? ~(str *ns*) ~line ~form ~x nil ~?data-fn))
+           (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~x nil ~?data-fn))
 
         `(let [~'e (catching (if (~pred* ~x) nil -dummy-error) ~'e ~'e)]
            (if (nil? ~'e)
              ~(if truthy? true x)
-             (-invar-violation! ~elidable? ~(str *ns*) ~line ~form ~x ~'e ~?data-fn))))
+             (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~x ~'e ~?data-fn))))
 
       (if non-throwing-pred?
         `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
@@ -247,7 +260,7 @@
 
            (if (nil? ~'e)
              ~(if truthy? true 'z)
-             (-invar-violation! ~elidable? ~(str *ns*) ~line ~form ~'z ~'e ~?data-fn)))
+             (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~'z ~'e ~?data-fn)))
 
         `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
                ~'e (catching
@@ -257,7 +270,7 @@
 
            (if (nil? ~'e)
              ~(if truthy? true 'z)
-             (-invar-violation! ~elidable? ~(str *ns*) ~line ~form ~'z ~'e ~?data-fn)))))))
+             (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~'z ~'e ~?data-fn)))))))
 
 (comment
   (macroexpand '(-invar true false 1      string?    "foo"             nil)) ; Type 0

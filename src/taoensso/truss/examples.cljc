@@ -14,19 +14,12 @@
 
 (square 5)   ; => 25
 (square nil) ; =>
-;; Invariant violation in `taoensso.truss.examples:10`.
-;; Test form `(integer? n)` with failing input: `<nil>`
-;; {:*?data* nil,
-;;  :elidable? true,
-;;  :dt #inst "2016-10-14T10:01:28.671-00:00",
-;;  :val nil,
-;;  :ns-str "taoensso.truss.examples",
-;;  :val-type nil,
-;;  :?err nil,
-;;  :*assert* true,
-;;  :?data nil,
-;;  :?line 10,
-;;  :form-str "(integer? n)"}
+;; Invariant failed at taoensso.truss.examples|9: (integer? nil)
+;; {:dt #inst "2022-11-16T19:28:18.587-00:00",
+;;  :pred integer?,
+;;  :arg {:value nil, :type nil},
+;;  :loc {:ns taoensso.truss.examples, :line 9},
+;;  :env {:elidable? true, :*assert* true}}
 )
 
 ;;;; Inline assertions and bindings
@@ -42,40 +35,32 @@
 
 ;; Anything that fails the predicate will throw an error
 (have string? 42) ; =>
-;; Invariant violation in `taoensso.truss.examples:44`.
-;; Test form `(string? 42)` with failing input: `42`
-;; {:instant 1450937836680,
-;;  :ns "taoensso.truss.examples",
-;;  :elidable? true,
-;;  :val 42,
-;;  :val-type java.lang.Long,
-;;  :?err nil,
-;;  :*assert* true,
-;;  :?data nil,
-;;  :?line 44,
-;;  :form-str "(string? 42)"}
+;; Invariant failed at taoensso.truss.examples|37: (string? 42)
+;; {:dt #inst "2022-11-16T19:29:49.004-00:00",
+;;  :pred string?,
+;;  :arg {:value 42, :type java.lang.Long},
+;;  :loc {:ns taoensso.truss.examples, :line 37},
+;;  :env {:elidable? true, :*assert* true}}
 
 ;; Truss also automatically traps and handles exceptions
 (have string? (/ 1 0)) ; =>
-;; Invariant violation in `taoensso.truss.examples:59`
-;; Test form `(string? (/ 1 0))` with failing input: `<undefined>`
-;; `val` error: java.lang.ArithmeticException: Divide by zero
-;; {:instant 1450938025898,
-;;  :ns "taoensso.truss.examples",
-;;  :elidable? true,
-;;  :val undefined/threw-error,
-;;  :val-type undefined/threw-error,
-;;  :?err #error {
-;;  :cause "Divide by zero"
-;;  :via
-;;  [{:type java.lang.ArithmeticException
-;;    :message "Divide by zero"
-;;    :at [clojure.lang.Numbers divide "Numbers.java" 158]}]
-;;  :trace [...]}]
-;;  :*assert* true,
-;;  :?data nil,
-;;  :?line 59,
-;;  :form-str "(string? (/ 1 0))"}
+;; Invariant failed at taoensso.truss.examples|46: (string?
+;;   truss/undefined-arg)
+;;
+;;   Error evaluating arg: Divide by zero
+;;   {:dt #inst "2022-11-16T19:30:15.945-00:00",
+;;    :pred string?,
+;;    :arg {:value truss/undefined-arg, :type truss/undefined-arg},
+;;    :loc {:ns taoensso.truss.examples, :line 46},
+;;    :env {:elidable? true, :*assert* true},
+;;    :err #error {
+;;    :cause "Divide by zero"
+;;    :via
+;;    [{:type java.lang.ArithmeticException
+;;      :message "Divide by zero"
+;;      :at [clojure.lang.Numbers divide "Numbers.java" 190]}]
+;;    :trace
+;;    [...]}
 )
 
 ;;;; Destructured bindings
@@ -88,19 +73,12 @@
 ;; This won't compromise error message clarity
 (let [[x y z] (have string? "foo" 42 "baz")]
   (str x y z)) ; =>
-;; Invariant violation in `taoensso.truss.examples:91`.
-;; Test form `(string? 42)` with failing input: `42`
-;; [(string? 42), 42]
-;; {:instant 1450938267043,
-;;  :ns "taoensso.truss.examples",
-;;  :elidable? true,
-;;  :val 42,
-;;  :val-type java.lang.Long,
-;;  :?err nil,
-;;  :*assert* true,
-;;  :?data nil,
-;;  :?line 91,
-;;  :form-str "(string? 42)"}
+;; Invariant failed at taoensso.truss.examples|74: (string? 42)
+;; {:dt #inst "2022-11-16T19:32:07.397-00:00",
+;;  :pred string?,
+;;  :arg {:value 42, :type java.lang.Long},
+;;  :loc {:ns taoensso.truss.examples, :line 74},
+;;  :env {:elidable? true, :*assert* true}}
 )
 
 ;;;; Attaching debug data
@@ -111,18 +89,13 @@
     (* x y)))
 
 (my-handler {:foo :bar} 5 nil) ; =>
-;; Invariant violation in `taoensso.truss.examples:146`.
-;; Test-form `(integer? y)` with failing input: `<nil>`
-;; {:instant 1450939196719,
-;;  :ns "taoensso.truss.examples",
-;;  :elidable? true,
-;;  :val nil,
-;;  :val-type nil,
-;;  :?err nil,
-;;  :*assert* true,
-;;  :?data {:ring-req {:foo :bar}}, ; <--- This got included
-;;  :?line 146,
-;;  :form-str "(integer? y)"}
+;; Invariant failed at taoensso.truss.examples|88: (integer? nil)
+;; {:dt #inst "2022-11-16T19:33:39.842-00:00",
+;;  :pred integer?,
+;;  :arg {:value nil, :type nil},
+;;  :loc {:ns taoensso.truss.examples, :line 88},
+;;  :env {:elidable? true, :*assert* true},
+;;  :data {:dynamic nil, :arg {:ring-req {:foo :bar}}}}
 )
 
 ;;;; Attaching dynamic debug data
@@ -133,7 +106,7 @@
   will include `(data-fn <ring-req>)` as debug data."
   [data-fn ring-handler-fn]
   (fn [ring-req]
-    (truss/with-dynamic-assertion-data (data-fn ring-req)
+    (truss/with-data (data-fn ring-req)
       (ring-handler-fn ring-req))))
 
 (defn ring-handler [ring-req]
@@ -146,23 +119,14 @@
     (fn data-fn [ring-req] {:ring-session (:session ring-req)})
     ring-handler))
 
-(comment
-  (wrapped-ring-handler
-    {:method :get :uri "/" :session {:user-name "Stu"}}) ; =>
-   ;; Invariant violation in `taoensso.truss.examples:136`.
-   ;; Test form `(string? 42)` with failing input: `42
-   ;; {:*?data* {:ring-session {:user-name "Stu"}}, ; <--- This got included
-   ;;  :elidable? true,
-   ;;  :dt #inst "2015-12-28T05:57:49.759-00:00",
-   ;;  :val 42,
-   ;;  :ns-str "taoensso.truss.examples",
-   ;;  :val-type java.lang.Long,
-   ;;  :?err nil,
-   ;;  :*assert* true,
-   ;;  :?data nil,
-   ;;  :?line 136,
-   ;;  :form-str "(string? 42)"}
-  )
+(wrapped-ring-handler
+  {:method :get :uri "/" :session {:user-name "Stu"}}) ; =>
+;; Invariant failed at taoensso.truss.examples|113: (string? 42)
+;; {:dt #inst "2022-11-16T19:34:14.006-00:00",
+;;  :pred string?,
+;;  :arg {:value 42, :type java.lang.Long},
+;;  :loc {:ns taoensso.truss.examples, :line 113},
+;;  :env {:elidable? true, :*assert* true}}
 )
 
 ;;;; Assertions within data structures
@@ -232,7 +196,7 @@
 (defn have-person
   "Returns given arg if it's a valid `person`, otherwise throws an error"
   [person]
-  (truss/with-dynamic-assertion-data {:person person} ; (Optional) setup some extra debug data
+  (truss/with-data {:person person} ; (Optional) setup some extra debug data
     (have? map? person)
     (have? [:ks>= #{:age :name}] person)
     (have? [:or nil? pos-int?] (:age person)))

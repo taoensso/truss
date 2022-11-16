@@ -115,16 +115,16 @@
 
 ;;;; Utils
 
-(defn get-dynamic-assertion-data
+(defn get-data
   "Returns current value of dynamic assertion data."
-  [] impl/*?data*)
+  [] impl/*data*)
 
-(defmacro with-dynamic-assertion-data
+(defmacro with-data
   "Executes body with dynamic assertion data bound to given value.
   This data will be included in any violation errors thrown by body."
-  [data & body] `(binding [impl/*?data* ~data] ~@body))
+  [data & body] `(binding [impl/*data* ~data] ~@body))
 
-(comment (with-dynamic-assertion-data "foo" (have string? 5 :data "bar")))
+(comment (with-data "foo" (have string? 5 :data "bar")))
 
 (defn-   -error-fn [f] (if (= f :default) impl/default-error-fn f))
 (defn set-error-fn!
@@ -135,3 +135,15 @@
 
 (defmacro with-error-fn [f & body]
   `(binding [impl/*error-fn* ~(-error-fn f)] ~@body))
+
+;;;; Deprecated
+
+(defn get-dynamic-assertion-data
+  ^{:deprecated "v1.7.0 (2022-11-16)"
+    :doc "Prefer `get-data`"}
+  [] impl/*data*)
+
+(defmacro with-dynamic-assertion-data
+  ^{:deprecated "v1.7.0 (2022-11-16)"
+    :doc "Prefer `with-data`"}
+  [data & body])

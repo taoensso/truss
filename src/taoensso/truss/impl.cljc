@@ -63,7 +63,7 @@
   (let [data @data_]
     (throw (ex-info @(:msg_ data) (dissoc data :msg_)))))
 
-(def ^:dynamic *?data* nil)
+(def ^:dynamic *data* nil)
 (def ^:dynamic *error-fn* default-error-fn)
 
 (defn  non-throwing [pred] (fn [x] (catching (pred x))))
@@ -215,8 +215,8 @@
          :form-str  form-str
          :val       (if undefn-val? 'truss/undefined-val       val)
          :val-type  (if undefn-val? 'truss/undefined-val (type val))
-         :?data      ?data  ; Arbitrary user data, handy for debugging
-         :*?data*   *?data* ; ''
+         :?data     ?data  ; Arbitrary user data, handy for debugging
+         :*?data*   *data* ; ''
          :?err      ?err
          :*assert*  *assert*
          :elidable? elidable?})))))

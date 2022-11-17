@@ -139,11 +139,12 @@
 ;;;; Deprecated
 
 (defn get-dynamic-assertion-data
-  ^{:deprecated "v1.7.0 (2022-11-16)"
-    :doc "Prefer `get-data`"}
+  {:deprecated "v1.7.0 (2022-11-16)"
+   :doc "Prefer `get-data`"}
   [] impl/*data*)
 
 (defmacro with-dynamic-assertion-data
-  ^{:deprecated "v1.7.0 (2022-11-16)"
-    :doc "Prefer `with-data`"}
+  {:deprecated "v1.7.0 (2022-11-16)"
+   :doc "Prefer `with-data`"}
   [data & body] `(binding [impl/*data* ~data] ~@body))
+

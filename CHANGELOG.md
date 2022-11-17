@@ -1,9 +1,9 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
-## v1.7.0 - 2022 Nov 16
+## v1.7.1 - 2022 Nov 17
 
 ```clojure
-[com.taoensso/truss "1.7.0"]
+[com.taoensso/truss "1.7.1"]
 ```
 
 > This is a **maintenance release**. Changes may be BREAKING for some users, see relevant commits referenced below for details.  

@@ -174,8 +174,8 @@ A Truss `(have <pred> <arg>)` form will either throw or return the given argumen
 
 ;; Truss also automatically traps and handles exceptions
 (have string? (/ 1 0)) ; =>
-;; Invariant failed at taoensso.truss.examples|46: (string?
-;;   truss/undefined-arg)
+;; Invariant failed at taoensso.truss.examples|46:
+;;   (string? truss/undefined-arg)
 ;;
 ;;   Error evaluating arg: Divide by zero
 ;;   {:dt #inst "2022-11-16T19:30:15.945-00:00",

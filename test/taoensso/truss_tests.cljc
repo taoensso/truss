@@ -119,7 +119,9 @@
 
       (truss/with-data {:user 101}
         [(is (= "5"                                          (have string? "5")))
-         (is (throws? :common {:data {:dynamic {:user 101}}} (have string?  5)))])])])
+         (is (throws? :common {:data {:dynamic {:user 101}}} (have string?  5)))
+         (is (throws? :common {:data {:dynamic {:user 101}
+                                      :arg     {:name "Stu"}}} (have string? 5 :data {:name "Stu"})))])])])
 
 ;;;;
 

@@ -1,9 +1,9 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
-## v1.7.1 - 2022 Nov 17
+## v1.7.2 - 2022 Nov 20
 
 ```clojure
-[com.taoensso/truss "1.7.1"]
+[com.taoensso/truss "1.7.2"]
 ```
 
 > This is a **maintenance release**. Changes may be BREAKING for some users, see relevant commits referenced below for details.  
@@ -14,6 +14,7 @@
 - 67093d9 [mod] [BREAKING] Simplify default error output
 - 09779a4 [mod] [DEPRECATE] Shorten names of dynamic assertion utils
 - [nop] Update from .cljx to .cljc
+- [nop] Remove unused Cljs macros
 
 
 ## v1.6.0 - 2020 Aug 29

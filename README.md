@@ -4,7 +4,7 @@
 **[CHANGELOG][]** | [API][] | current [Break Version][]:
 
 ```clojure
-[com.taoensso/truss "1.7.1"] ; See CHANGELOG for details
+[com.taoensso/truss "1.7.2"] ; See CHANGELOG for details
 ```
 
 > See [here](https://taoensso.com/clojure/backers) if you're interested in helping support my open-source work, thanks! - Peter Taoussanis
@@ -55,8 +55,8 @@ See [here](https://github.com/ptaoussanis/truss#motivation) for a discussion of 
 Add the necessary dependency to your project:
 
 ```clojure
-Leiningen: [com.taoensso/truss "1.7.1"] ; or
-deps.edn:   com.taoensso/truss {:mvn/version "1.7.1"}
+Leiningen: [com.taoensso/truss "1.7.2"] ; or
+deps.edn:   com.taoensso/truss {:mvn/version "1.7.2"}
 ```
 
 And setup your namespace imports:

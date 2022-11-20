@@ -18,25 +18,26 @@
 ;;   - Allows Encore to depend on Truss (esp. nb for back-compatibility wrappers).
 ;;   - Allows Truss to be entirely dependency free.
 
-(defmacro if-cljs [then else] (if (:ns &env) then else))
+#?(:clj (defmacro if-cljs [then else] (if (:ns &env) then else)))
 #?(:clj
    (defmacro compile-if [test then else]
      (if (try (eval test) (catch Throwable _ false))
        `(do ~then)
        `(do ~else))))
 
-(defmacro catching "Cross-platform try/catch/finally."
-  ;; We badly need something like http://dev.clojure.org/jira/browse/CLJ-1293
-  ;; TODO js/Error instead of :default as temp workaround for http://goo.gl/UW7773
-  ([try-expr                     ] `(catching ~try-expr ~'_ nil))
-  ([try-expr error-sym catch-expr]
-   `(if-cljs
-      (try ~try-expr (catch js/Error  ~error-sym ~catch-expr))
-      (try ~try-expr (catch Throwable ~error-sym ~catch-expr))))
-  ([try-expr error-sym catch-expr finally-expr]
-   `(if-cljs
-      (try ~try-expr (catch js/Error  ~error-sym ~catch-expr) (finally ~finally-expr))
-      (try ~try-expr (catch Throwable ~error-sym ~catch-expr) (finally ~finally-expr)))))
+#?(:clj
+   (defmacro catching "Cross-platform try/catch/finally."
+     ;; We badly need something like http://dev.clojure.org/jira/browse/CLJ-1293
+     ;; TODO js/Error instead of :default as temp workaround for http://goo.gl/UW7773
+     ([try-expr                     ] `(catching ~try-expr ~'_ nil))
+     ([try-expr error-sym catch-expr]
+      `(if-cljs
+         (try ~try-expr (catch js/Error  ~error-sym ~catch-expr))
+         (try ~try-expr (catch Throwable ~error-sym ~catch-expr))))
+     ([try-expr error-sym catch-expr finally-expr]
+      `(if-cljs
+         (try ~try-expr (catch js/Error  ~error-sym ~catch-expr) (finally ~finally-expr))
+         (try ~try-expr (catch Throwable ~error-sym ~catch-expr) (finally ~finally-expr))))))
 
 (defn rsome   [pred coll]       (reduce (fn [acc in] (when-let [p (pred in)] (reduced p))) nil coll))
 (defn revery? [pred coll]       (reduce (fn [acc in] (if (pred in) true (reduced nil))) true coll))
@@ -235,42 +236,43 @@
 
 (defn- ns-sym [] (symbol (str *ns*)))
 
-(defmacro -invar
-  "Written to maximize performance + minimize post Closure+gzip Cljs code size."
-  [elidable? truthy? line pred x ?data-fn]
-  (let [non-throwing-x? (not (list? x)) ; Pre-evaluated (common case)
-        [pred* non-throwing-pred?] (-xpred pred)]
+#?(:clj
+   (defmacro -invar
+     "Written to maximize performance + minimize post Closure+gzip Cljs code size."
+     [elidable? truthy? line pred x ?data-fn]
+     (let [non-throwing-x? (not (list? x)) ; Pre-evaluated (common case)
+           [pred* non-throwing-pred?] (-xpred pred)]
 
-    (if non-throwing-x? ; Common case
-      (if non-throwing-pred? ; Common case
-        `(if (~pred* ~x)
-           ~(if truthy? true x)
-           (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~x nil ~?data-fn))
+       (if non-throwing-x? ; Common case
+         (if non-throwing-pred? ; Common case
+           `(if (~pred* ~x)
+              ~(if truthy? true x)
+              (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~x nil ~?data-fn))
 
-        `(let [~'e (catching (if (~pred* ~x) nil -dummy-error) ~'e ~'e)]
-           (if (nil? ~'e)
-             ~(if truthy? true x)
-             (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~x ~'e ~?data-fn))))
+           `(let [~'e (catching (if (~pred* ~x) nil -dummy-error) ~'e ~'e)]
+              (if (nil? ~'e)
+                ~(if truthy? true x)
+                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~x ~'e ~?data-fn))))
 
-      (if non-throwing-pred?
-        `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
-               ~'e (if (instance? WrappedError ~'z)
-                     ~'z
-                     (if (~pred* ~'z) nil -dummy-error))]
+         (if non-throwing-pred?
+           `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
+                  ~'e (if (instance? WrappedError ~'z)
+                        ~'z
+                        (if (~pred* ~'z) nil -dummy-error))]
 
-           (if (nil? ~'e)
-             ~(if truthy? true 'z)
-             (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~'z ~'e ~?data-fn)))
+              (if (nil? ~'e)
+                ~(if truthy? true 'z)
+                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~'z ~'e ~?data-fn)))
 
-        `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
-               ~'e (catching
-                    (if (instance? WrappedError ~'z)
-                      ~'z
-                      (if (~pred* ~'z) nil -dummy-error)) ~'e ~'e)]
+           `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
+                  ~'e (catching
+                        (if (instance? WrappedError ~'z)
+                          ~'z
+                          (if (~pred* ~'z) nil -dummy-error)) ~'e ~'e)]
 
-           (if (nil? ~'e)
-             ~(if truthy? true 'z)
-             (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~'z ~'e ~?data-fn)))))))
+              (if (nil? ~'e)
+                ~(if truthy? true 'z)
+                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~'z ~'e ~?data-fn))))))))
 
 (comment
   (macroexpand '(-invar true false 1      string?    "foo"             nil)) ; Type 0
@@ -294,55 +296,56 @@
   (-invar false false 1 zero?    (/ 5 0) nil) ; Form error example
   )
 
-(defmacro -invariant [elidable? truthy? line & args]
-  (let [bang?      (= (first args) :!) ; For back compatibility, undocumented
-        elidable?  (and elidable? (not bang?))
-        elide?     (and elidable? (not *assert*))
-        args       (if bang? (next args) args)
-        in?        (= (second args) :in) ; (have pred :in xs1 xs2 ...)
-        args       (if in? (cons (first args) (nnext args)) args)
+#?(:clj
+   (defmacro -invariant [elidable? truthy? line & args]
+     (let [bang?      (= (first args) :!) ; For back compatibility, undocumented
+           elidable?  (and elidable? (not bang?))
+           elide?     (and elidable? (not *assert*))
+           args       (if bang? (next args) args)
+           in?        (= (second args) :in) ; (have pred :in xs1 xs2 ...)
+           args       (if in? (cons (first args) (nnext args)) args)
 
-        data?      (and (> (count args) 2) ; Distinguish from `:data` pred
-                        (= (last (butlast args)) :data))
-        ?data-fn   (when data? `(fn [] ~(last args)))
-        args       (if data? (butlast (butlast args)) args)
+           data?      (and (> (count args) 2) ; Distinguish from `:data` pred
+                           (= (last (butlast args)) :data))
+           ?data-fn   (when data? `(fn [] ~(last args)))
+           args       (if data? (butlast (butlast args)) args)
 
-        auto-pred? (= (count args) 1) ; Unique common case: (have ?x)
-        pred       (if auto-pred? 'taoensso.truss.impl/some? (first args))
-        [?x1 ?xs]  (if auto-pred?
-                     [(first args) nil]
-                     (if (nnext args) [nil (next args)] [(second args) nil]))
-        single-x?  (nil? ?xs)
-        in-fn
-        `(fn [~'__in] ; Will (necessarily) lose exact form
-           (-invar ~elidable? ~truthy? ~line ~pred ~'__in ~?data-fn))]
+           auto-pred? (= (count args) 1) ; Unique common case: (have ?x)
+           pred       (if auto-pred? 'taoensso.truss.impl/some? (first args))
+           [?x1 ?xs]  (if auto-pred?
+                        [(first args) nil]
+                        (if (nnext args) [nil (next args)] [(second args) nil]))
+           single-x?  (nil? ?xs)
+           in-fn
+           `(fn [~'__in] ; Will (necessarily) lose exact form
+              (-invar ~elidable? ~truthy? ~line ~pred ~'__in ~?data-fn))]
 
-    (if elide?
-      (if truthy?
-        true
-        (if single-x? ?x1 (vec ?xs)))
+       (if elide?
+         (if truthy?
+           true
+           (if single-x? ?x1 (vec ?xs)))
 
-      (if-not in?
+         (if-not in?
 
-        (if single-x?
-          ;; (have pred x) -> x
-          `(-invar ~elidable? ~truthy? ~line ~pred ~?x1 ~?data-fn)
+           (if single-x?
+             ;; (have pred x) -> x
+             `(-invar ~elidable? ~truthy? ~line ~pred ~?x1 ~?data-fn)
 
-          ;; (have pred x1 x2 ...) -> [x1 x2 ...]
-          (if truthy?
-            `(do ~@(mapv (fn [x] `(-invar ~elidable? ~truthy? ~line ~pred ~x ~?data-fn)) ?xs) true)
-            (do    (mapv (fn [x] `(-invar ~elidable? ~truthy? ~line ~pred ~x ~?data-fn)) ?xs))))
+             ;; (have pred x1 x2 ...) -> [x1 x2 ...]
+             (if truthy?
+               `(do ~@(mapv (fn [x] `(-invar ~elidable? ~truthy? ~line ~pred ~x ~?data-fn)) ?xs) true)
+               (do    (mapv (fn [x] `(-invar ~elidable? ~truthy? ~line ~pred ~x ~?data-fn)) ?xs))))
 
-        (if single-x?
+           (if single-x?
 
-          ;; (have? pred :in xs) -> bool
-          ;; (have  pred :in xs) -> xs
-          (if truthy?
-            `(taoensso.truss.impl/revery? ~in-fn ~?x1)
-            `(taoensso.truss.impl/revery  ~in-fn ~?x1))
+             ;; (have? pred :in xs) -> bool
+             ;; (have  pred :in xs) -> xs
+             (if truthy?
+               `(taoensso.truss.impl/revery? ~in-fn ~?x1)
+               `(taoensso.truss.impl/revery  ~in-fn ~?x1))
 
-          ;; (have? pred :in xs1 xs2 ...) -> [bool1 ...]
-          ;; (have  pred :in xs1 xs2 ...) -> [xs1   ...]
-          (if truthy?
-            `(do ~@(mapv (fn [xs] `(taoensso.truss.impl/revery? ~in-fn ~xs)) ?xs) true)
-            (do    (mapv (fn [xs] `(taoensso.truss.impl/revery  ~in-fn ~xs)) ?xs))))))))
+             ;; (have? pred :in xs1 xs2 ...) -> [bool1 ...]
+             ;; (have  pred :in xs1 xs2 ...) -> [xs1   ...]
+             (if truthy?
+               `(do ~@(mapv (fn [xs] `(taoensso.truss.impl/revery? ~in-fn ~xs)) ?xs) true)
+               (do    (mapv (fn [xs] `(taoensso.truss.impl/revery  ~in-fn ~xs)) ?xs)))))))))

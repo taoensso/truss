@@ -60,8 +60,8 @@
                 (do (reset! a2_ true) "bar")
                 (do (reset! a3_ true) 10)))]
 
-        [(is (= true             result))
-         (is (= [true true nil]) [@a1_ @a2_ @a3_])])])
+        [(is (= true            result))
+         (is (= [true true nil] [@a1_ @a2_ @a3_]))])])
 
    (testing "Throwing predicates"
      (let [zero! (fn [n] (if (zero? n) true (throw (ex-info "" {}))))]

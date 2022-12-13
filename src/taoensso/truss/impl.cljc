@@ -67,11 +67,11 @@
 (def ^:dynamic *data* nil)
 (def ^:dynamic *error-fn* default-error-fn)
 
-(defn  non-throwing [pred] (fn [x] (catching (pred x))))
-(defn- non-throwing?
+(defn  safe [pred] (fn [x] (catching (pred x))))
+(defn- safe?
   "Returns true for some common preds that are naturally non-throwing."
   [p]
-  #?(:cljs false ; Would need `resolve`; other ideas?
+  #?(:cljs false ; Use `cljs.analyzer/resolve-var`?
      :clj
      (or
        (keyword? p)
@@ -84,10 +84,10 @@
            (if (symbol? p) (when-let [v (resolve p)] @v) p))))))
 
 (defn -xpred
-  "Expands any special predicate forms and returns [<expanded-pred> <non-throwing?>]."
+  "Expands any special predicate forms and returns [<expanded-pred> <safe?>]."
   [pred]
   (if-not (vector? pred)
-    [pred (non-throwing? pred)]
+    [pred (safe? pred)]
     (let [[type a1 a2 a3] pred]
       (assert a1 "Special predicate [<special-type> <arg>] form w/o <arg>")
       (case type
@@ -109,36 +109,36 @@
         (let [self (fn [?pred] (when ?pred (-xpred ?pred)))
 
               ;; Support recursive expansion:
-              [[a1 nt-a1?] [a2 nt-a2?] [a3 nt-a3?]] [(self a1) (self a2) (self a3)]
+              [[a1 sf-a1?] [a2 sf-a2?] [a3 sf-a3?]] [(self a1) (self a2) (self a3)]
 
-              nt-a1    (when a1 (if nt-a1? a1 `(non-throwing ~a1)))
-              nt-a2    (when a2 (if nt-a2? a2 `(non-throwing ~a2)))
-              nt-a3    (when a3 (if nt-a3? a3 `(non-throwing ~a3)))
-              nt-comp? (cond a3 (and nt-a1? nt-a2? nt-a3?)
-                             a2 (and nt-a1? nt-a2?)
-                             a1 nt-a1?)]
+              sf-a1    (when a1 (if sf-a1? a1 `(safe ~a1)))
+              sf-a2    (when a2 (if sf-a2? a2 `(safe ~a2)))
+              sf-a3    (when a3 (if sf-a3? a3 `(safe ~a3)))
+              sf-comp? (cond a3 (and sf-a1? sf-a2? sf-a3?)
+                             a2 (and sf-a1? sf-a2?)
+                             a1 sf-a1?)]
 
           (case type
             :and ; all-of
             (cond
-              a3 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x) (~a3 ~'x))) nt-comp?]
-              a2 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x))) nt-comp?]
-              a1 [a1 nt-a1?])
+              a3 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x) (~a3 ~'x))) sf-comp?]
+              a2 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x))) sf-comp?]
+              a1 [a1 sf-a1?])
 
             :or  ; any-of
             (cond
-              a3 [`(fn [~'x] (or (~nt-a1 ~'x) (~nt-a2 ~'x) (~nt-a3 ~'x))) true]
-              a2 [`(fn [~'x] (or (~nt-a1 ~'x) (~nt-a2 ~'x))) true]
-              a1 [a1 nt-a1?])
+              a3 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x) (~sf-a3 ~'x))) true]
+              a2 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x))) true]
+              a1 [a1 sf-a1?])
 
             :not ; complement/none-of
             ;; Note that it's a little ambiguous whether we'd want
-            ;; non-throwing behaviour here or not so choosing to interpret
-            ;; throws as undefined to minimize surprise
+            ;; safe (non-throwing) behaviour here or not so choosing
+            ;; to interpret throws as undefined to minimize surprise
             (cond
-              a3 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x) (~a3 ~'x)))) nt-comp?]
-              a2 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x)))) nt-comp?]
-              a1 [`(fn [~'x] (not     (~a1 ~'x))) nt-a1?])))))))
+              a3 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x) (~a3 ~'x)))) sf-comp?]
+              a2 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x)))) sf-comp?]
+              a1 [`(fn [~'x] (not     (~a1 ~'x))) sf-a1?])))))))
 
 (comment
   (-xpred string?)
@@ -240,11 +240,11 @@
    (defmacro -invar
      "Written to maximize performance + minimize post Closure+gzip Cljs code size."
      [elidable? truthy? line pred x ?data-fn]
-     (let [non-throwing-x? (not (list? x)) ; Pre-evaluated (common case)
-           [pred* non-throwing-pred?] (-xpred pred)]
+     (let [safe-x? (not (list? x)) ; Pre-evaluated (common case)
+           [pred* safe-pred?] (-xpred pred)]
 
-       (if non-throwing-x? ; Common case
-         (if non-throwing-pred? ; Common case
+       (if safe-x? ; Common case
+         (if safe-pred? ; Common case
            `(if (~pred* ~x)
               ~(if truthy? true x)
               (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~x nil ~?data-fn))
@@ -254,7 +254,7 @@
                 ~(if truthy? true x)
                 (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~x ~'e ~?data-fn))))
 
-         (if non-throwing-pred?
+         (if safe-pred?
            `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
                   ~'e (if (instance? WrappedError ~'z)
                         ~'z

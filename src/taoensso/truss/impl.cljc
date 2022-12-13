@@ -4,10 +4,7 @@
   (:require
    [clojure.set :as set]
    #?(:cljs [cljs.analyzer]))
-  #?(:cljs
-     (:require-macros
-      [taoensso.truss.impl
-       :refer [compile-if catching -invar]])))
+  #?(:cljs (:require-macros [taoensso.truss.impl :refer [catching]])))
 
 (comment (require '[taoensso.encore :as enc]))
 
@@ -21,12 +18,6 @@
 ;;   - Allows Truss to be entirely dependency free.
 
 #?(:clj (defmacro if-cljs [then else] (if (:ns &env) then else)))
-#?(:clj
-   (defmacro compile-if [test then else]
-     (if (try (eval test) (catch Throwable _ false))
-       `(do ~then)
-       `(do ~else))))
-
 #?(:clj
    (defmacro catching "Cross-platform try/catch/finally."
      ;; We badly need something like http://dev.clojure.org/jira/browse/CLJ-1293
@@ -71,83 +62,84 @@
 
 (defn  safe [pred] (fn [x] (catching (pred x))))
 (defn- safe?
-  "[Optimization] Returns true for common preds that are naturally non-throwing."
-  [env p]
-  (or
-    (keyword? p)
-    (map?     p)
-    (set?     p)
-    (let [p
-          (if (symbol? p)
-            (if-let [v #?(:clj  (resolve                       p)
-                          :cljs (cljs.analyzer/resolve-var env p))]
-              @v p)
-            p)]
+   "[Optimization] Returns true for common preds that are naturally non-throwing."
+   [env p]
+   (or
+     (keyword? p)
+     (map?     p)
+     (set?     p)
+     (let [p
+           (if (symbol? p)
+             (if-let [v #?(:clj  (resolve                       p)
+                           :cljs (cljs.analyzer/resolve-var env p))]
+               @v p)
+             p)]
 
-      (contains?
-        #{nil? #_some? string? integer? number? symbol? keyword? float?
-          set? vector? coll? list? ifn? fn? associative? sequential? delay?
-          sorted? counted? reversible? true? false? identity not boolean}
-        p))))
+       (contains?
+         #{nil? #_some? string? integer? number? symbol? keyword? float?
+           set? vector? coll? list? ifn? fn? associative? sequential? delay?
+           sorted? counted? reversible? true? false? identity not boolean}
+         p))))
 
 (comment (safe? nil 'nil?))
 
-(defn- xpred
-  "Expands any special predicate forms and returns [<expanded-pred> <safe?>]."
-  [env pred]
-  (if-not (vector? pred)
-    [pred (safe? env pred)]
-    (let [[type a1 a2 a3] pred]
-      (assert a1 "Special predicate [<special-type> <arg>] form w/o <arg>")
-      (case type
-        :set=             [`(fn [~'x] (=             (ensure-set ~'x) (ensure-set ~a1))) false]
-        :set<=            [`(fn [~'x] (set/subset?   (ensure-set ~'x) (ensure-set ~a1))) false]
-        :set>=            [`(fn [~'x] (set/superset? (ensure-set ~'x) (ensure-set ~a1))) false]
-        :ks=              [`(fn [~'x] (ks=      ~a1 ~'x)) false]
-        :ks<=             [`(fn [~'x] (ks<=     ~a1 ~'x)) false]
-        :ks>=             [`(fn [~'x] (ks>=     ~a1 ~'x)) false]
-        :ks-nnil?         [`(fn [~'x] (ks-nnil? ~a1 ~'x)) false]
-        (    :el     :in) [`(fn [~'x]      (contains? (ensure-set ~a1) ~'x))  false]
-        (:not-el :not-in) [`(fn [~'x] (not (contains? (ensure-set ~a1) ~'x))) false]
+#?(:clj
+   (defn- xpred
+     "Expands any special predicate forms and returns [<expanded-pred> <safe?>]."
+     [env pred]
+     (if-not (vector? pred)
+       [pred (safe? env pred)]
+       (let [[type a1 a2 a3] pred]
+         (assert a1 "Special predicate [<special-type> <arg>] form w/o <arg>")
+         (case type
+           :set=             [`(fn [~'x] (=             (ensure-set ~'x) (ensure-set ~a1))) false]
+           :set<=            [`(fn [~'x] (set/subset?   (ensure-set ~'x) (ensure-set ~a1))) false]
+           :set>=            [`(fn [~'x] (set/superset? (ensure-set ~'x) (ensure-set ~a1))) false]
+           :ks=              [`(fn [~'x] (ks=      ~a1 ~'x)) false]
+           :ks<=             [`(fn [~'x] (ks<=     ~a1 ~'x)) false]
+           :ks>=             [`(fn [~'x] (ks>=     ~a1 ~'x)) false]
+           :ks-nnil?         [`(fn [~'x] (ks-nnil? ~a1 ~'x)) false]
+           (    :el     :in) [`(fn [~'x]      (contains? (ensure-set ~a1) ~'x))  false]
+           (:not-el :not-in) [`(fn [~'x] (not (contains? (ensure-set ~a1) ~'x))) false]
 
-        :n=               [`(fn [~'x] (=  (count ~'x) ~a1)) false]
-        :n>=              [`(fn [~'x] (>= (count ~'x) ~a1)) false]
-        :n<=              [`(fn [~'x] (<= (count ~'x) ~a1)) false]
+           :n=               [`(fn [~'x] (=  (count ~'x) ~a1)) false]
+           :n>=              [`(fn [~'x] (>= (count ~'x) ~a1)) false]
+           :n<=              [`(fn [~'x] (<= (count ~'x) ~a1)) false]
 
-        ;; Pred composition
-        (let [self (fn [?pred] (when ?pred (xpred env ?pred)))
+           ;; Pred composition
+           (let [self (fn [?pred] (when ?pred (xpred env ?pred)))
 
-              ;; Support recursive expansion:
-              [[a1 sf-a1?] [a2 sf-a2?] [a3 sf-a3?]] [(self a1) (self a2) (self a3)]
+                 ;; Support recursive expansion:
+                 [[a1 sf-a1?] [a2 sf-a2?] [a3 sf-a3?]] [(self a1) (self a2) (self a3)]
 
-              sf-a1    (when a1 (if sf-a1? a1 `(safe ~a1)))
-              sf-a2    (when a2 (if sf-a2? a2 `(safe ~a2)))
-              sf-a3    (when a3 (if sf-a3? a3 `(safe ~a3)))
-              sf-comp? (cond a3 (and sf-a1? sf-a2? sf-a3?)
-                             a2 (and sf-a1? sf-a2?)
-                             a1 sf-a1?)]
+                 sf-a1    (when a1 (if sf-a1? a1 `(safe ~a1)))
+                 sf-a2    (when a2 (if sf-a2? a2 `(safe ~a2)))
+                 sf-a3    (when a3 (if sf-a3? a3 `(safe ~a3)))
+                 sf-comp? (cond a3 (and sf-a1? sf-a2? sf-a3?)
+                                a2 (and sf-a1? sf-a2?)
+                                a1 sf-a1?)]
 
-          (case type
-            :and ; all-of
-            (cond
-              a3 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x) (~a3 ~'x))) sf-comp?]
-              a2 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x))) sf-comp?]
-              a1 [a1 sf-a1?])
+             (case type
+               :and ; all-of
+               (cond
+                 a3 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x) (~a3 ~'x))) sf-comp?]
+                 a2 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x))) sf-comp?]
+                 a1 [a1 sf-a1?])
 
-            :or  ; any-of
-            (cond
-              a3 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x) (~sf-a3 ~'x))) true]
-              a2 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x))) true]
-              a1 [a1 sf-a1?])
+               :or  ; any-of
+               (cond
+                 a3 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x) (~sf-a3 ~'x))) true]
+                 a2 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x))) true]
+                 a1 [a1 sf-a1?])
 
-            :not ; complement/none-of
-            ;; Note that it's a little ambiguous whether we'd want
-            ;; safe (non-throwing) behaviour here or not so choosing
-            ;; to interpret throws as undefined to minimize surprise
-            (cond
-              a3 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x) (~a3 ~'x)))) sf-comp?]
-              a2 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x)))) sf-comp?]
-              a1 [`(fn [~'x] (not     (~a1 ~'x))) sf-a1?])))))))
+               :not ; complement/none-of
+               ;; Note that it's a little ambiguous whether we'd want
+               ;; safe (non-throwing) behaviour here or not so choosing
+               ;; to interpret throws as undefined to minimize surprise
+               (cond
+                 a3 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x) (~a3 ~'x)))) sf-comp?]
+                 a2 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x)))) sf-comp?]
+                 a1 [`(fn [~'x] (not     (~a1 ~'x))) sf-a1?]))))))))
 
 (comment
   (xpred nil string?)

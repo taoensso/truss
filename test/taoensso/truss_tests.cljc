@@ -4,7 +4,10 @@
    [clojure.string  :as str]
    [taoensso.encore :as enc   :refer [throws throws?]]
    [taoensso.truss  :as truss :refer [have have? have! have!?]]
-   [taoensso.truss.impl :as impl]))
+   [taoensso.truss.impl :as impl])
+
+  #?(:cljs
+     (:require-macros [taoensso.truss-tests :refer [my-macro1]])))
 
 (comment
   (remove-ns      'taoensso.truss-tests)
@@ -124,5 +127,26 @@
                                       :arg     {:name "Stu"}}} (have string? 5 :data {:name "Stu"})))])])])
 
 ;;;;
+
+#?(:clj (defmacro my-macro1 "See issue #12" [n x] `(have string? (do (swap! ~n inc) ~x))))
+
+(deftest _side-effects
+  (testing "Side effects"
+
+    (let [n (atom 0)]
+      [(is (= (have string? (do (swap! n inc) "str")) "str"))
+       (is (= @n 1))])
+
+    (let [n (atom 0)]
+      [(is (throws? (have string? (do (swap! n inc) :kw))))
+       (is (= @n 1))])
+
+    (let [n (atom 0)]
+      [(is (= (my-macro1 n "str") "str"))
+       (is (= @n 1))])
+
+    (let [n (atom 0)]
+      [(is (throws? (my-macro1 n :kw)))
+       (is (= @n 1))])))
 
 #?(:cljs (test/run-tests))

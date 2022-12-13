@@ -246,13 +246,17 @@
 (defn- ns-sym [] (symbol (str *ns*)))
 
 #?(:clj
+   (defn const-form? "See issue #12" [x]
+     (not (or (list? x) (instance? clojure.lang.Cons x)))))
+
+#?(:clj
    (defmacro -invar
      "Written to maximize performance + minimize post Closure+gzip Cljs code size."
      [elidable? truthy? line pred x ?data-fn]
-     (let [safe-x? (not (list? x)) ; Pre-evaluated (common case)
+     (let [const-x? (const-form? x) ; Common case
            [pred* safe-pred?] (xpred #?(:clj nil :cljs &env) pred)]
 
-       (if safe-x? ; Common case
+       (if const-x? ; Common case
          (if safe-pred? ; Common case
            `(if (~pred* ~x)
               ~(if truthy? true x)

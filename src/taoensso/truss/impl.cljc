@@ -1,7 +1,9 @@
 (ns taoensso.truss.impl
   "Private implementation details."
-  (:require [clojure.set :as set])
   (:refer-clojure :exclude [some?])
+  (:require
+   [clojure.set :as set]
+   #?(:cljs [cljs.analyzer]))
   #?(:cljs
      (:require-macros
       [taoensso.truss.impl
@@ -69,25 +71,32 @@
 
 (defn  safe [pred] (fn [x] (catching (pred x))))
 (defn- safe?
-  "Returns true for some common preds that are naturally non-throwing."
-  [p]
-  #?(:cljs false ; Use `cljs.analyzer/resolve-var`?
-     :clj
-     (or
-       (keyword? p)
-       (map?     p)
-       (set?     p)
-       (boolean
-         (#{nil? #_some? string? integer? number? symbol? keyword? float?
-            set? vector? coll? list? ifn? fn? associative? sequential? delay?
-            sorted? counted? reversible? true? false? identity not boolean}
-           (if (symbol? p) (when-let [v (resolve p)] @v) p))))))
+  "[Optimization] Returns true for common preds that are naturally non-throwing."
+  [env p]
+  (or
+    (keyword? p)
+    (map?     p)
+    (set?     p)
+    (let [p
+          (if (symbol? p)
+            (if-let [v #?(:clj  (resolve                       p)
+                          :cljs (cljs.analyzer/resolve-var env p))]
+              @v p)
+            p)]
 
-(defn -xpred
+      (contains?
+        #{nil? #_some? string? integer? number? symbol? keyword? float?
+          set? vector? coll? list? ifn? fn? associative? sequential? delay?
+          sorted? counted? reversible? true? false? identity not boolean}
+        p))))
+
+(comment (safe? nil 'nil?))
+
+(defn- xpred
   "Expands any special predicate forms and returns [<expanded-pred> <safe?>]."
-  [pred]
+  [env pred]
   (if-not (vector? pred)
-    [pred (safe? pred)]
+    [pred (safe? env pred)]
     (let [[type a1 a2 a3] pred]
       (assert a1 "Special predicate [<special-type> <arg>] form w/o <arg>")
       (case type
@@ -106,7 +115,7 @@
         :n<=              [`(fn [~'x] (<= (count ~'x) ~a1)) false]
 
         ;; Pred composition
-        (let [self (fn [?pred] (when ?pred (-xpred ?pred)))
+        (let [self (fn [?pred] (when ?pred (xpred env ?pred)))
 
               ;; Support recursive expansion:
               [[a1 sf-a1?] [a2 sf-a2?] [a3 sf-a3?]] [(self a1) (self a2) (self a3)]
@@ -141,11 +150,11 @@
               a1 [`(fn [~'x] (not     (~a1 ~'x))) sf-a1?])))))))
 
 (comment
-  (-xpred string?)
-  (-xpred [:or string? integer? :foo]) ; t
-  (-xpred [:or string? integer? seq])  ; f
-  (-xpred [:or string? integer? [:and number? integer?]]) ; t
-  (-xpred [:or string? integer? [:and number? pos?]])     ; f
+  (xpred nil string?)
+  (xpred nil [:or string? integer? :foo]) ; t
+  (xpred nil [:or string? integer? seq])  ; f
+  (xpred nil [:or string? integer? [:and number? integer?]]) ; t
+  (xpred nil [:or string? integer? [:and number? pos?]])     ; f
   )
 
 ;; #?(:clj
@@ -241,7 +250,7 @@
      "Written to maximize performance + minimize post Closure+gzip Cljs code size."
      [elidable? truthy? line pred x ?data-fn]
      (let [safe-x? (not (list? x)) ; Pre-evaluated (common case)
-           [pred* safe-pred?] (-xpred pred)]
+           [pred* safe-pred?] (xpred #?(:clj nil :cljs &env) pred)]
 
        (if safe-x? ; Common case
          (if safe-pred? ; Common case

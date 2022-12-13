@@ -19,9 +19,9 @@
 
 #?(:clj (defmacro if-cljs [then else] (if (:ns &env) then else)))
 #?(:clj
-   (defmacro catching "Cross-platform try/catch/finally."
-     ;; We badly need something like http://dev.clojure.org/jira/browse/CLJ-1293
-     ;; TODO js/Error instead of :default as temp workaround for http://goo.gl/UW7773
+   (defmacro catching
+     "Cross-platform try/catch/finally."
+     ;; Very unfortunate that CLJ-1293 has not yet been addressed
      ([try-expr                     ] `(catching ~try-expr ~'_ nil))
      ([try-expr error-sym catch-expr]
       `(if-cljs
@@ -117,20 +117,20 @@
                  sf-a3    (when a3 (if sf-a3? a3 `(safe ~a3)))
                  sf-comp? (cond a3 (and sf-a1? sf-a2? sf-a3?)
                                 a2 (and sf-a1? sf-a2?)
-                                a1 sf-a1?)]
+                                a1      sf-a1?)]
 
              (case type
                :and ; all-of
                (cond
                  a3 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x) (~a3 ~'x))) sf-comp?]
-                 a2 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x))) sf-comp?]
-                 a1 [a1 sf-a1?])
+                 a2 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x)))           sf-comp?]
+                 a1 [a1                                                sf-a1?])
 
-               :or  ; any-of
+               :or ; any-of
                (cond
                  a3 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x) (~sf-a3 ~'x))) true]
-                 a2 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x))) true]
-                 a1 [a1 sf-a1?])
+                 a2 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x)))              true]
+                 a1 [a1                                                    sf-a1?])
 
                :not ; complement/none-of
                ;; Note that it's a little ambiguous whether we'd want
@@ -138,8 +138,8 @@
                ;; to interpret throws as undefined to minimize surprise
                (cond
                  a3 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x) (~a3 ~'x)))) sf-comp?]
-                 a2 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x)))) sf-comp?]
-                 a1 [`(fn [~'x] (not     (~a1 ~'x))) sf-a1?]))))))))
+                 a2 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x))))           sf-comp?]
+                 a1 [`(fn [~'x] (not     (~a1 ~'x)))                        sf-a1?]))))))))
 
 (comment
   (xpred nil string?)
@@ -346,11 +346,11 @@
              ;; (have? pred :in xs) -> bool
              ;; (have  pred :in xs) -> xs
              (if truthy?
-               `(taoensso.truss.impl/revery? ~in-fn ~?x1)
-               `(taoensso.truss.impl/revery  ~in-fn ~?x1))
+               `(revery? ~in-fn ~?x1)
+               `(revery  ~in-fn ~?x1))
 
              ;; (have? pred :in xs1 xs2 ...) -> [bool1 ...]
              ;; (have  pred :in xs1 xs2 ...) -> [xs1   ...]
              (if truthy?
-               `(do ~@(mapv (fn [xs] `(taoensso.truss.impl/revery? ~in-fn ~xs)) ?xs) true)
-               (do    (mapv (fn [xs] `(taoensso.truss.impl/revery  ~in-fn ~xs)) ?xs)))))))))
+               `(do ~@(mapv (fn [xs] `(revery? ~in-fn ~xs)) ?xs) true)
+               (do    (mapv (fn [xs] `(revery  ~in-fn ~xs)) ?xs)))))))))

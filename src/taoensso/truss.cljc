@@ -153,7 +153,8 @@
      This means that inner macros lose call site information like the
      line number of the outer macro.
 
-     This util offers a workaround to authors of the outer macro:
+     This util offers a workaround to macro authors:
+
        (defmacro foo1 [x]                `(truss/have ~x))  ; W/o  line info
        (defmacro foo2 [x] (keep-callsite `(truss/have ~x))) ; With line info"
 

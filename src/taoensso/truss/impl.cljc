@@ -297,7 +297,7 @@
   )
 
 #?(:clj
-   (defmacro -invariant [elidable? truthy? line & args]
+   (defmacro -invariant [elidable? truthy? line args]
      (let [bang?      (= (first args) :!) ; For back compatibility, undocumented
            elidable?  (and elidable? (not bang?))
            elide?     (and elidable? (not *assert*))

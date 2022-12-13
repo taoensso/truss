@@ -27,7 +27,7 @@
 
      See also `have?`, `have!`."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
-     [& args] `(-invariant :elidable nil ~(:line (meta &form)) ~@args)))
+     [& args] `(-invariant :elidable nil ~(:line (meta &form)) ~args)))
 
 #?(:clj
    (defmacro have?
@@ -36,14 +36,14 @@
        (fn my-fn [x] {:post [(have  nil? %)]} nil) ; {:post [nil]} FAILS
        (fn my-fn [x] {:post [(have? nil? %)]} nil) ; {:post [true]} passes as intended"
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
-     [& args] `(-invariant :elidable :truthy ~(:line (meta &form)) ~@args)))
+     [& args] `(-invariant :elidable :truthy ~(:line (meta &form)) ~args)))
 
 #?(:clj
    (defmacro have!
      "Like `have` but ignores *assert* value (so can never be elided). Useful
      for important conditions in production (e.g. security checks)."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
-     [& args] `(-invariant nil nil ~(:line (meta &form)) ~@args)))
+     [& args] `(-invariant nil nil ~(:line (meta &form)) ~args)))
 
 #?(:clj
    (defmacro have!?
@@ -54,7 +54,7 @@
      **WARNING**: Do NOT use in :pre/:post conds since those are ALWAYS subject
      to *assert*, directly contradicting the intention of the bang (`!`) here."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
-     [& args] `(-invariant :assertion :truthy ~(:line (meta &form)) ~@args)))
+     [& args] `(-invariant :assertion :truthy ~(:line (meta &form)) ~args)))
 
 (comment :see-tests)
 (comment

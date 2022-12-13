@@ -1,5 +1,20 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.8.0 - 2022 Dec 13
+
+```clojure
+[com.taoensso/truss "1.8.0"]
+```
+
+> This is a **maintenance release**. _Should_ be non-breaking.
+> See [here](https://github.com/ptaoussanis/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
+
+### Since `v1.7.2`
+
+- e1a1fa6 [new] Document and provide workaround for CLJ-865
+- 2e3fa98 [fix] [#12] Fix issue with duplicate side effects when using within another macro
+
+
 ## v1.7.2 - 2022 Nov 20
 
 ```clojure

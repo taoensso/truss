@@ -3,7 +3,8 @@
   (:refer-clojure :exclude [some?])
   (:require
    [clojure.set :as set]
-   #?(:cljs [cljs.analyzer]))
+   ;; #?(:cljs [cljs.analyzer])
+   )
   #?(:cljs
      (:require-macros
       [taoensso.truss.impl
@@ -79,8 +80,8 @@
     (set?     p)
     (let [p
           (if (symbol? p)
-            (if-let [v #?(:clj  (resolve                       p)
-                          :cljs (cljs.analyzer/resolve-var env p))]
+            (if-let [v #?(:clj        (resolve                       p)
+                          :cljs nil #_(cljs.analyzer/resolve-var env p))]
               @v p)
             p)]
 

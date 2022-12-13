@@ -5,6 +5,18 @@
 
 (comment (require '[taoensso.encore :as enc]))
 
+;;;;
+
+#?(:clj
+   (defn- clj-865-workaround
+     "Experimental undocumented alternative CLJ-865 workaround that
+     allows more precise control than `keep-callsite`."
+     [macro-amp-form args]
+     (let [[a0 & an] args]
+       (if-let [given-amp-form (and (map? a0) (get a0 :&form))]
+         [(meta given-amp-form) an]
+         [(meta macro-amp-form) args]))))
+
 ;;;; Core API
 
 #?(:clj
@@ -33,7 +45,9 @@
 
      See also `have?`, `have!`."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
-     [& args] `(-invariant :elidable nil ~(:line (meta &form)) ~args)))
+     [& args]
+     (let [[&meta args] (clj-865-workaround &form args)]
+       `(-invariant :elidable nil ~(:line &meta) ~args))))
 
 #?(:clj
    (defmacro have?
@@ -42,14 +56,18 @@
        (fn my-fn [x] {:post [(have  nil? %)]} nil) ; {:post [nil]} FAILS
        (fn my-fn [x] {:post [(have? nil? %)]} nil) ; {:post [true]} passes as intended"
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
-     [& args] `(-invariant :elidable :truthy ~(:line (meta &form)) ~args)))
+     [& args]
+     (let [[&meta args] (clj-865-workaround &form args)]
+       `(-invariant :elidable :truthy ~(:line &meta) ~args))))
 
 #?(:clj
    (defmacro have!
      "Like `have` but ignores *assert* value (so can never be elided). Useful
      for important conditions in production (e.g. security checks)."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
-     [& args] `(-invariant nil nil ~(:line (meta &form)) ~args)))
+     [& args]
+     (let [[&meta args] (clj-865-workaround &form args)]
+       `(-invariant nil nil ~(:line &meta) ~args))))
 
 #?(:clj
    (defmacro have!?
@@ -60,7 +78,9 @@
      **WARNING**: Do NOT use in :pre/:post conds since those are ALWAYS subject
      to *assert*, directly contradicting the intention of the bang (`!`) here."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
-     [& args] `(-invariant :assertion :truthy ~(:line (meta &form)) ~args)))
+     [& args]
+     (let [[&meta args] (clj-865-workaround &form args)]
+       `(-invariant :assertion :truthy ~(:line &meta) ~args))))
 
 (comment :see-tests)
 (comment

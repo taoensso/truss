@@ -25,6 +25,12 @@
      You may attach arbitrary debug info to assertion violations like:
        `(have string? x :data {:my-arbitrary-debug-info \"foo\"})`
 
+     Re: use of Truss assertions within other macro bodies:
+       Due to CLJ-865, call site information (e.g. line number) of
+       outer macro will unfortunately be lost.
+
+       See `keep-callsite` util for a workaround.
+
      See also `have?`, `have!`."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args] `(-invariant :elidable nil ~(:line (meta &form)) ~args)))
@@ -118,6 +124,28 @@
   (have  integer? :in #{1 2 3} [4 5 6] #{7 8 9} s1))
 
 ;;;; Utils
+
+#?(:clj
+   (defmacro keep-callsite
+     "CLJ-865 unfortunately means that it's currently not possible
+     for an inner macro to access the &form metadata of an outer macro.
+
+     This means that inner macros lose call site information like the
+     line number of the outer macro.
+
+     This util offers a workaround to authors of the outer macro:
+       (defmacro foo1 [x]                `(truss/have ~x))  ; W/o  line info
+       (defmacro foo2 [x] (keep-callsite `(truss/have ~x))) ; With line info"
+
+     {:added "v1.8.0 (2022-12-13)"}
+     [& body] `(with-meta (do ~@body) (meta ~'&form))))
+
+(comment
+  (defmacro foo1 [x]                `(have ~x))
+  (defmacro foo2 [x] (keep-callsite `(have ~x)))
+
+  (foo1 nil)
+  (foo2 nil))
 
 (defn get-data
   "Returns current value of dynamic assertion data."

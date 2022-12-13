@@ -7,7 +7,8 @@
    [taoensso.truss.impl :as impl])
 
   #?(:cljs
-     (:require-macros [taoensso.truss-tests :refer [my-macro1]])))
+     (:require-macros [taoensso.truss-tests :refer
+                       [my-macro1 my-macro2 my-macro3]])))
 
 (comment
   (remove-ns      'taoensso.truss-tests)
@@ -148,5 +149,14 @@
     (let [n (atom 0)]
       [(is (throws? (my-macro1 n :kw)))
        (is (= @n 1))])))
+
+(defmacro my-macro2 [x]                      `(have string? ~x))
+(defmacro my-macro3 [x] (truss/keep-callsite `(have string? ~x)))
+
+(deftest _clj-865
+  (testing "Clojure issue #865"
+    [(is (=             (my-macro2 "str") "str"))
+     (is (=        (->> (my-macro2 :kw) throws ex-data :loc :line) nil))
+     (is (integer? (->> (my-macro3 :kw) throws ex-data :loc :line)))]))
 
 #?(:cljs (test/run-tests))

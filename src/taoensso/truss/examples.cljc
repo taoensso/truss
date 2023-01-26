@@ -92,9 +92,9 @@
 ;; Invariant failed at taoensso.truss.examples|88: (integer? nil)
 ;; {:dt #inst "2022-11-16T19:33:39.842-00:00",
 ;;  :pred integer?,
-;;  :arg {:value nil, :type nil},
-;;  :loc {:ns taoensso.truss.examples, :line 88},
-;;  :env {:elidable? true, :*assert* true},
+;;  :arg  {:value nil, :type nil},
+;;  :loc  {:ns taoensso.truss.examples, :line 88},
+;;  :env  {:elidable? true, :*assert* true},
 ;;  :data {:dynamic nil, :arg {:ring-req {:foo :bar}}}}
 )
 
@@ -124,9 +124,10 @@
 ;; Invariant failed at taoensso.truss.examples|113: (string? 42)
 ;; {:dt #inst "2022-11-16T19:34:14.006-00:00",
 ;;  :pred string?,
-;;  :arg {:value 42, :type java.lang.Long},
-;;  :loc {:ns taoensso.truss.examples, :line 113},
-;;  :env {:elidable? true, :*assert* true}}
+;;  :arg  {:value 42, :type java.lang.Long},
+;;  :loc  {:ns taoensso.truss.examples, :line 113},
+;;  :env  {:elidable? true, :*assert* true},
+;;  :data {:dynamic {:ring-session {:user-name "Stu"}}, :arg nil}}
 )
 
 ;;;; Assertions within data structures

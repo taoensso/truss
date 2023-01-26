@@ -260,7 +260,8 @@ And you can attach shared debug data at the `binding` level:
 ;;  :pred string?,
 ;;  :arg {:value 42, :type java.lang.Long},
 ;;  :loc {:ns taoensso.truss.examples, :line 113},
-;;  :env {:elidable? true, :*assert* true}}
+;;  :env {:elidable? true, :*assert* true},
+;;  :data {:dynamic {:ring-session {:user-name "Stu"}}, :arg nil}}
 ```
 
 ### Assertions within data structures

@@ -111,7 +111,10 @@
       (is (= nil   (have [:or nil? [:and integer? odd?]] nil)))
       (is (= 7     (have [:or nil? [:and integer? odd?]] 7)))
       (is (throws? (have [:or nil? [:and integer? odd?]] 7.5)))
-      (is (throws? (have [:or nil? [:and integer? odd?]] 6)))])
+      (is (throws? (have [:or nil? [:and integer? odd?]] 6)))
+
+      #?(:clj (is (= "hello"       (have [:instance? String]  "hello"))))
+      #?(:clj (is (throws? :common (have [:instance? Integer] "hello"))))])
 
    (testing "Error fns"
      [(is (= nil  (truss/with-error-fn nil           (have string? 5))))

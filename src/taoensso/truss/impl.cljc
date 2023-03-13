@@ -106,6 +106,9 @@
            :n>=              [`(fn [~'x] (>= (count ~'x) ~a1)) false]
            :n<=              [`(fn [~'x] (<= (count ~'x) ~a1)) false]
 
+           :instance?        [`(fn [~'x] (instance?  ~a1 ~'x)) false]
+           :satisfies?       [`(fn [~'x] (satisfies? ~a1 ~'x)) false]
+
            ;; Pred composition
            (let [self (fn [?pred] (when ?pred (xpred env ?pred)))
 

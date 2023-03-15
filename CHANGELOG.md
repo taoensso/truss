@@ -1,5 +1,21 @@
 > This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md)
 
+## v1.9.0 - 2023 Mar 15
+
+```clojure
+[com.taoensso/truss "1.9.0"]
+```
+
+> This is a **feature release**. Should be non-breaking.
+> See [here](https://github.com/ptaoussanis/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
+
+### Since `v1.8.0`
+
+- 4bbab6b [new] Add unevaluated arg `:form` info to invariant violations
+- 9a572b1 [new] Add `:instance?`, `:satisfies?` special predicate forms
+- e644631 [new] Experimental alternative workaround for CLJ-865
+
+
 ## v1.8.0 - 2022 Dec 13
 
 ```clojure

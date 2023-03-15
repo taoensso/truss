@@ -33,7 +33,7 @@
    :depr     {:jvm-opts ["-Dtaoensso.elide-deprecated=true"]}
    :dev      [:c1.11 :test :server-jvm :depr]
    :test     {:dependencies [[org.clojure/test.check    "1.1.1"]
-                             [com.taoensso/encore      "3.34.0"
+                             [com.taoensso/encore      "3.51.0"
                               :exclusions [com.taoensso/truss]]]}}
 
   :test-paths ["test" #_"src"]

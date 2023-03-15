@@ -17,7 +17,7 @@
 ;; Invariant failed at taoensso.truss.examples|9: (integer? nil)
 ;; {:dt #inst "2022-11-16T19:28:18.587-00:00",
 ;;  :pred integer?,
-;;  :arg {:value nil, :type nil},
+;;  :arg {:form n, :value nil, :type nil},
 ;;  :loc {:ns taoensso.truss.examples, :line 9},
 ;;  :env {:elidable? true, :*assert* true}}
 )
@@ -38,7 +38,7 @@
 ;; Invariant failed at taoensso.truss.examples|37: (string? 42)
 ;; {:dt #inst "2022-11-16T19:29:49.004-00:00",
 ;;  :pred string?,
-;;  :arg {:value 42, :type java.lang.Long},
+;;  :arg {:form 42, :value 42, :type java.lang.Long},
 ;;  :loc {:ns taoensso.truss.examples, :line 37},
 ;;  :env {:elidable? true, :*assert* true}}
 
@@ -50,7 +50,7 @@
 ;;   Error evaluating arg: Divide by zero
 ;;   {:dt #inst "2022-11-16T19:30:15.945-00:00",
 ;;    :pred string?,
-;;    :arg {:value truss/undefined-arg, :type truss/undefined-arg},
+;;    :arg {:form (/ 1 0), :value truss/undefined-arg, :type truss/undefined-arg},
 ;;    :loc {:ns taoensso.truss.examples, :line 46},
 ;;    :env {:elidable? true, :*assert* true},
 ;;    :err #error {
@@ -76,7 +76,7 @@
 ;; Invariant failed at taoensso.truss.examples|74: (string? 42)
 ;; {:dt #inst "2022-11-16T19:32:07.397-00:00",
 ;;  :pred string?,
-;;  :arg {:value 42, :type java.lang.Long},
+;;  :arg {:form 42, :value 42, :type java.lang.Long},
 ;;  :loc {:ns taoensso.truss.examples, :line 74},
 ;;  :env {:elidable? true, :*assert* true}}
 )
@@ -92,7 +92,7 @@
 ;; Invariant failed at taoensso.truss.examples|88: (integer? nil)
 ;; {:dt #inst "2022-11-16T19:33:39.842-00:00",
 ;;  :pred integer?,
-;;  :arg  {:value nil, :type nil},
+;;  :arg  {:form y, :value nil, :type nil},
 ;;  :loc  {:ns taoensso.truss.examples, :line 88},
 ;;  :env  {:elidable? true, :*assert* true},
 ;;  :data {:dynamic nil, :arg {:ring-req {:foo :bar}}}}
@@ -124,7 +124,7 @@
 ;; Invariant failed at taoensso.truss.examples|113: (string? 42)
 ;; {:dt #inst "2022-11-16T19:34:14.006-00:00",
 ;;  :pred string?,
-;;  :arg  {:value 42, :type java.lang.Long},
+;;  :arg  {:form 42, :value 42, :type java.lang.Long},
 ;;  :loc  {:ns taoensso.truss.examples, :line 113},
 ;;  :env  {:elidable? true, :*assert* true},
 ;;  :data {:dynamic {:ring-session {:user-name "Stu"}}, :arg nil}}

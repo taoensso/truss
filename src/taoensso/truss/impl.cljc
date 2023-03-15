@@ -174,7 +174,7 @@
 (def  -dummy-error #?(:clj (Object.) :cljs (js-obj)))
 (defn -invar-violation!
   ;; - http://dev.clojure.org/jira/browse/CLJ-865 would be handy for line numbers.
-  [elidable? ns-sym ?line pred arg ?err ?data-fn]
+  [elidable? ns-sym ?line pred arg-form arg ?err ?data-fn]
   (when-let [error-fn *error-fn*]
     (error-fn ; Nb consumer must deref while bindings are still active
      (delay
@@ -203,7 +203,7 @@
             msg_
             (delay
               (let [msg (str "Invariant failed at " ns-sym (when ?line (str "|" ?line)) ": "
-                          (list pred arg-val))]
+                          (list pred #_arg-form arg-val))]
 
                 (if-let [err ?err]
                   (let [err-msg #_(ex-message err) (error-message err)]
@@ -226,7 +226,8 @@
             {:msg_  msg_
              :dt    instant
              :pred  pred
-             :arg   {:value arg-val
+             :arg   {:form  arg-form
+                     :value arg-val
                      :type  arg-type}
 
              :loc {:ns ns-sym :line ?line}
@@ -255,12 +256,12 @@
          (if safe-pred? ; Common case
            `(if (~pred* ~x)
               ~(if truthy? true x)
-              (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~x nil ~?data-fn))
+              (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred '~x ~x nil ~?data-fn))
 
            `(let [~'e (catching (if (~pred* ~x) nil -dummy-error) ~'e ~'e)]
               (if (nil? ~'e)
                 ~(if truthy? true x)
-                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~x ~'e ~?data-fn))))
+                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred '~x ~x ~'e ~?data-fn))))
 
          (if safe-pred?
            `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
@@ -270,7 +271,7 @@
 
               (if (nil? ~'e)
                 ~(if truthy? true 'z)
-                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~'z ~'e ~?data-fn)))
+                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred '~x ~'z ~'e ~?data-fn)))
 
            `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
                   ~'e (catching
@@ -280,7 +281,7 @@
 
               (if (nil? ~'e)
                 ~(if truthy? true 'z)
-                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred ~'z ~'e ~?data-fn))))))))
+                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred '~x ~'z ~'e ~?data-fn))))))))
 
 (comment
   (macroexpand '(-invar true false 1      string?    "foo"             nil)) ; Type 0

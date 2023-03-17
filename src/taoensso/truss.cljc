@@ -1,5 +1,5 @@
 (ns taoensso.truss
-  "An opinionated assertions API for Clojure/Script."
+  "An opinionated assertions (micro) library for Clojure/Script."
   {:author "Peter Taoussanis (@ptaoussanis)"}
   (:require [taoensso.truss.impl :as impl :refer [-invariant]]))
 

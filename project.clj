@@ -1,6 +1,6 @@
 (defproject com.taoensso/truss "1.9.0"
   :author "Peter Taoussanis <https://www.taoensso.com>"
-  :description "Assertions API for Clojure/Script"
+  :description "Assertions micro library for Clojure/Script"
   :url "https://github.com/ptaoussanis/truss"
   :min-lein-version "2.3.3"
 

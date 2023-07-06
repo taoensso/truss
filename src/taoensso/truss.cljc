@@ -153,20 +153,20 @@
      This means that inner macros lose call site information like the
      line number of the outer macro.
 
-     This util offers a workaround to macro authors:
+     This util offers a workaround for macro authors:
 
-       (defmacro foo1 [x]                `(truss/have ~x))  ; W/o  line info
-       (defmacro foo2 [x] (keep-callsite `(truss/have ~x))) ; With line info"
+       (defmacro my-macro1 [x]                `(truss/have ~x))  ; W/o  call site info
+       (defmacro my-macro2 [x] (keep-callsite `(truss/have ~x))) ; With call site info"
 
      {:added "v1.8.0 (2022-12-13)"}
      [& body] `(with-meta (do ~@body) (meta ~'&form))))
 
 (comment
-  (defmacro foo1 [x]                `(have ~x))
-  (defmacro foo2 [x] (keep-callsite `(have ~x)))
+  (defmacro my-macro1 [x]                `(have ~x))
+  (defmacro my-macro2 [x] (keep-callsite `(have ~x)))
 
-  (foo1 nil)
-  (foo2 nil))
+  (my-macro1 nil)
+  (my-macro2 nil))
 
 (defn get-data
   "Returns current value of dynamic assertion data."
@@ -184,7 +184,7 @@
 (defn set-error-fn!
   "Sets the root (fn [data-map-delay]) called on invariant violations."
   [f]
-  #?(:cljs (set!             impl/*error-fn*        (-error-fn f))
+  #?(:cljs (set!             impl/*error-fn*         (-error-fn f))
      :clj  (alter-var-root #'impl/*error-fn* (fn [_] (-error-fn f)))))
 
 #?(:clj

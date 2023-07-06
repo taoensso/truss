@@ -162,4 +162,6 @@
      (is (=        (->> (my-macro2 :kw) throws ex-data :loc :line) nil))
      (is (integer? (->> (my-macro3 :kw) throws ex-data :loc :line)))]))
 
+;;;;
+
 #?(:cljs (test/run-tests))

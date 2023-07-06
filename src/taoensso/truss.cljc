@@ -14,8 +14,8 @@
      [macro-amp-form args]
      (let [[a0 & an] args]
        (if-let [given-amp-form (and (map? a0) (get a0 :&form))]
-         [(meta given-amp-form) an]
-         [(meta macro-amp-form) args]))))
+         [given-amp-form an]
+         [macro-amp-form args]))))
 
 ;;;; Core API
 
@@ -46,8 +46,9 @@
      See also `have?`, `have!`."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
-     (let [[&meta args] (clj-865-workaround &form args)]
-       `(-invariant :elidable nil ~(:line &meta) ~args))))
+     (let [[&form args] (clj-865-workaround &form args)
+           source       (impl/get-source    &form &env)]
+       `(-invariant :elidable nil ~source ~args))))
 
 #?(:clj
    (defmacro have?
@@ -57,8 +58,9 @@
        (fn my-fn [x] {:post [(have? nil? %)]} nil) ; {:post [true]} passes as intended"
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
-     (let [[&meta args] (clj-865-workaround &form args)]
-       `(-invariant :elidable :truthy ~(:line &meta) ~args))))
+     (let [[&form args] (clj-865-workaround &form args)
+           source       (impl/get-source    &form &env)]
+       `(-invariant :elidable :truthy ~source ~args))))
 
 #?(:clj
    (defmacro have!
@@ -66,8 +68,9 @@
      for important conditions in production (e.g. security checks)."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
-     (let [[&meta args] (clj-865-workaround &form args)]
-       `(-invariant nil nil ~(:line &meta) ~args))))
+     (let [[&form args] (clj-865-workaround &form args)
+           source       (impl/get-source    &form &env)]
+       `(-invariant nil nil ~source ~args))))
 
 #?(:clj
    (defmacro have!?
@@ -79,8 +82,9 @@
      to *assert*, directly contradicting the intention of the bang (`!`) here."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
-     (let [[&meta args] (clj-865-workaround &form args)]
-       `(-invariant :assertion :truthy ~(:line &meta) ~args))))
+     (let [[&form args] (clj-865-workaround &form args)
+           source       (impl/get-source    &form &env)]
+       `(-invariant :assertion :truthy ~source ~args))))
 
 (comment :see-tests)
 (comment

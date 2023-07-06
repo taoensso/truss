@@ -18,7 +18,7 @@
 ;; {:dt #inst "2022-11-16T19:28:18.587-00:00",
 ;;  :pred integer?,
 ;;  :arg {:form n, :value nil, :type nil},
-;;  :loc {:ns taoensso.truss.examples, :line 9},
+;;  :loc {:ns taoensso.truss.examples, :line 9, :column 1, :file "..."},
 ;;  :env {:elidable? true, :*assert* true}}
 )
 
@@ -39,7 +39,7 @@
 ;; {:dt #inst "2022-11-16T19:29:49.004-00:00",
 ;;  :pred string?,
 ;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :loc {:ns taoensso.truss.examples, :line 37},
+;;  :loc {:ns taoensso.truss.examples, :line 37, :column 1, :file "..."},
 ;;  :env {:elidable? true, :*assert* true}}
 
 ;; Truss also automatically traps and handles exceptions
@@ -51,7 +51,7 @@
 ;;   {:dt #inst "2022-11-16T19:30:15.945-00:00",
 ;;    :pred string?,
 ;;    :arg {:form (/ 1 0), :value truss/undefined-arg, :type truss/undefined-arg},
-;;    :loc {:ns taoensso.truss.examples, :line 46},
+;;    :loc {:ns taoensso.truss.examples, :line 46, :column 1, :file "..."},
 ;;    :env {:elidable? true, :*assert* true},
 ;;    :err #error {
 ;;    :cause "Divide by zero"
@@ -77,7 +77,7 @@
 ;; {:dt #inst "2022-11-16T19:32:07.397-00:00",
 ;;  :pred string?,
 ;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :loc {:ns taoensso.truss.examples, :line 74},
+;;  :loc {:ns taoensso.truss.examples, :line 74, :column 15, :file "..."},
 ;;  :env {:elidable? true, :*assert* true}}
 )
 
@@ -93,7 +93,7 @@
 ;; {:dt #inst "2022-11-16T19:33:39.842-00:00",
 ;;  :pred integer?,
 ;;  :arg  {:form y, :value nil, :type nil},
-;;  :loc  {:ns taoensso.truss.examples, :line 88},
+;;  :loc  {:ns taoensso.truss.examples, :line 88, :column 15, :file "..."},
 ;;  :env  {:elidable? true, :*assert* true},
 ;;  :data {:dynamic nil, :arg {:ring-req {:foo :bar}}}}
 )
@@ -125,7 +125,7 @@
 ;; {:dt #inst "2022-11-16T19:34:14.006-00:00",
 ;;  :pred string?,
 ;;  :arg  {:form 42, :value 42, :type java.lang.Long},
-;;  :loc  {:ns taoensso.truss.examples, :line 113},
+;;  :loc  {:ns taoensso.truss.examples, :line 113, :column 3, :file "..."},
 ;;  :env  {:elidable? true, :*assert* true},
 ;;  :data {:dynamic {:ring-session {:user-name "Stu"}}, :arg nil}}
 )

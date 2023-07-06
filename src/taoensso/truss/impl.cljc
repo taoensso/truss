@@ -3,6 +3,7 @@
   (:refer-clojure :exclude [some?])
   (:require
    [clojure.set :as set]
+   #?(:clj  [clojure.java.io :as io])
    #?(:cljs [cljs.analyzer]))
   #?(:cljs (:require-macros [taoensso.truss.impl :refer [catching]])))
 
@@ -50,6 +51,19 @@
   (defn #?(:clj ks<=     :cljs ^boolean ks<=)     [ks m] (set/subset?   (set (keys m)) (ensure-set ks)))
   (defn #?(:clj ks>=     :cljs ^boolean ks>=)     [ks m] (set/superset? (set (keys m)) (ensure-set ks)))
   (defn #?(:clj ks-nnil? :cljs ^boolean ks-nnil?) [ks m] (revery?     #(some? (get m %))           ks)))
+
+#?(:clj
+   (defn get-source [form env]
+     (let [{:keys [line column file]} (meta form)]
+       {:line   line
+        :column column
+        :file
+        (if (:ns env) ; Compiling cljs
+          ;; Note that meta (and thus file) can be nil due to CLJ-865
+          (if-let [classpath-file (and file (io/resource file))]
+            (.getPath (io/file classpath-file))
+            file)
+          *file*)})))
 
 ;;;; Truss
 
@@ -173,8 +187,7 @@
 (defn -assertion-error [msg] #?(:clj (AssertionError. msg) :cljs (js/Error. msg)))
 (def  -dummy-error #?(:clj (Object.) :cljs (js-obj)))
 (defn -invar-violation!
-  ;; - http://dev.clojure.org/jira/browse/CLJ-865 would be handy for line numbers.
-  [elidable? ns-sym ?line pred arg-form arg ?err ?data-fn]
+  [elidable? ns-sym ?line ?column ?file pred arg-form arg ?err ?data-fn]
   (when-let [error-fn *error-fn*]
     (error-fn ; Nb consumer must deref while bindings are still active
      (delay
@@ -202,8 +215,10 @@
 
             msg_
             (delay
-              (let [msg (str "Invariant failed at " ns-sym (when ?line (str "|" ?line)) ": "
-                          (list pred #_arg-form arg-val))]
+              (let [msg
+                    (str "Invariant failed at " ns-sym
+                      (when ?line (str "|" ?line #_(when ?column (str "." ?column)))) ": "
+                      (list pred #_arg-form arg-val))]
 
                 (if-let [err ?err]
                   (let [err-msg #_(ex-message err) (error-message err)]
@@ -222,17 +237,21 @@
               (when (or   dynamic      arg)
                 {:dynamic dynamic :arg arg}))
 
-            output
-            {:msg_  msg_
-             :dt    instant
-             :pred  pred
-             :arg   {:form  arg-form
-                     :value arg-val
-                     :type  arg-type}
+            loc {:ns ns-sym}
+            loc (if-let [v ?line]   (assoc loc :line   v) loc)
+            loc (if-let [v ?column] (assoc loc :column v) loc)
+            loc (if-let [v ?file]   (assoc loc :file   v) loc)
 
-             :loc {:ns ns-sym :line ?line}
-             :env {:elidable?  elidable?
-                   :*assert*   *assert*}}
+            output
+            {:msg_ msg_
+             :dt   instant
+             :pred pred
+             :loc  loc
+             :arg  {:form      arg-form
+                    :value     arg-val
+                    :type      arg-type}
+             :env  {:elidable? elidable?
+                    :*assert*  *assert*}}
 
             output (if-let [v ?data] (assoc output :data v) output)
             output (if-let [v ?err]  (assoc output :err  v) output)]
@@ -248,20 +267,21 @@
 #?(:clj
    (defmacro -invar
      "Written to maximize performance + minimize post Closure+gzip Cljs code size."
-     [elidable? truthy? line pred x ?data-fn]
+     [elidable? truthy? source pred x ?data-fn]
      (let [const-x? (const-form? x) ; Common case
-           [pred* safe-pred?] (xpred #?(:clj nil :cljs &env) pred)]
+           [pred* safe-pred?] (xpred #?(:clj nil :cljs &env) pred)
+           {:keys [line column file]} source]
 
        (if const-x? ; Common case
          (if safe-pred? ; Common case
            `(if (~pred* ~x)
               ~(if truthy? true x)
-              (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred '~x ~x nil ~?data-fn))
+              (-invar-violation! ~elidable? '~(ns-sym) ~line ~column ~file '~pred '~x ~x nil ~?data-fn))
 
            `(let [~'e (catching (if (~pred* ~x) nil -dummy-error) ~'e ~'e)]
               (if (nil? ~'e)
                 ~(if truthy? true x)
-                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred '~x ~x ~'e ~?data-fn))))
+                (-invar-violation! ~elidable? '~(ns-sym) ~line ~column ~file '~pred '~x ~x ~'e ~?data-fn))))
 
          (if safe-pred?
            `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
@@ -271,7 +291,7 @@
 
               (if (nil? ~'e)
                 ~(if truthy? true 'z)
-                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred '~x ~'z ~'e ~?data-fn)))
+                (-invar-violation! ~elidable? '~(ns-sym) ~line ~column ~file '~pred '~x ~'z ~'e ~?data-fn)))
 
            `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
                   ~'e (catching
@@ -281,7 +301,7 @@
 
               (if (nil? ~'e)
                 ~(if truthy? true 'z)
-                (-invar-violation! ~elidable? '~(ns-sym) ~line '~pred '~x ~'z ~'e ~?data-fn))))))))
+                (-invar-violation! ~elidable? '~(ns-sym) ~line ~column ~file '~pred '~x ~'z ~'e ~?data-fn))))))))
 
 (comment
   (macroexpand '(-invar true false 1      string?    "foo"             nil)) ; Type 0
@@ -306,7 +326,7 @@
   )
 
 #?(:clj
-   (defmacro -invariant [elidable? truthy? line args]
+   (defmacro -invariant [elidable? truthy? source args]
      (let [bang?      (= (first args) :!) ; For back compatibility, undocumented
            elidable?  (and elidable? (not bang?))
            elide?     (and elidable? (not *assert*))
@@ -327,7 +347,7 @@
            single-x?  (nil? ?xs)
            in-fn
            `(fn [~'__in] ; Will (necessarily) lose exact form
-              (-invar ~elidable? ~truthy? ~line ~pred ~'__in ~?data-fn))]
+              (-invar ~elidable? ~truthy? ~source ~pred ~'__in ~?data-fn))]
 
        (if elide?
          (if truthy?
@@ -338,12 +358,12 @@
 
            (if single-x?
              ;; (have pred x) -> x
-             `(-invar ~elidable? ~truthy? ~line ~pred ~?x1 ~?data-fn)
+             `(-invar ~elidable? ~truthy? ~source ~pred ~?x1 ~?data-fn)
 
              ;; (have pred x1 x2 ...) -> [x1 x2 ...]
              (if truthy?
-               `(do ~@(mapv (fn [x] `(-invar ~elidable? ~truthy? ~line ~pred ~x ~?data-fn)) ?xs) true)
-               (do    (mapv (fn [x] `(-invar ~elidable? ~truthy? ~line ~pred ~x ~?data-fn)) ?xs))))
+               `(do ~@(mapv (fn [x] `(-invar ~elidable? ~truthy? ~source ~pred ~x ~?data-fn)) ?xs) true)
+               (do    (mapv (fn [x] `(-invar ~elidable? ~truthy? ~source ~pred ~x ~?data-fn)) ?xs))))
 
            (if single-x?
 

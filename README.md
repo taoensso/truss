@@ -84,7 +84,7 @@ Truss uses a simple `(predicate arg)` pattern that should **immediately feel fam
 ;; {:dt #inst "2022-11-16T19:28:18.587-00:00",
 ;;  :pred integer?,
 ;;  :arg {:form n, :value nil, :type nil},
-;;  :loc {:ns taoensso.truss.examples, :line 9, :column 1, :file "..."},
+;;  :loc {:ns truss-examples, :line 9, :column 1, :file "..."},
 ;;  :env {:elidable? true, :*assert* true}}
 ```
 
@@ -145,7 +145,7 @@ Having the freedom to reinforce code only **where and when you judge it worthwhi
 
 ## Examples!
 
-> All examples are from [`src/taoensso/truss/examples.cljc`](https://github.com/ptaoussanis/truss/blob/master/src/taoensso/truss/examples.cljc)
+> All examples are from [`/examples/truss_examples.cljc`](/examples/truss_examples.cljc)
 
 Truss's sweet spot is often in longer, complex code (difficult to show here). So these examples are mostly examples of **syntax**, not **use case**. In particular, they mostly focus on simple **argument type assertions** since those are the easiest to understand.
 
@@ -169,7 +169,7 @@ A Truss `(have <pred> <arg>)` form will either throw or return the given argumen
 ;; {:dt #inst "2022-11-16T19:29:49.004-00:00",
 ;;  :pred string?,
 ;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :loc {:ns taoensso.truss.examples, :line 37, :column 1, :file "..."},
+;;  :loc {:ns truss-examples, :line 37, :column 1, :file "..."},
 ;;  :env {:elidable? true, :*assert* true}}
 
 ;; Truss also automatically traps and handles exceptions
@@ -181,7 +181,7 @@ A Truss `(have <pred> <arg>)` form will either throw or return the given argumen
 ;;   {:dt #inst "2022-11-16T19:30:15.945-00:00",
 ;;    :pred string?,
 ;;    :arg {:form (/ 1 0), :value truss/undefined-arg, :type truss/undefined-arg},
-;;    :loc {:ns taoensso.truss.examples, :line 46, :column 1, :file "..."},
+;;    :loc {:ns truss-examples, :line 46, :column 1, :file "..."},
 ;;    :env {:elidable? true, :*assert* true},
 ;;    :err #error {
 ;;    :cause "Divide by zero"
@@ -207,7 +207,7 @@ A Truss `(have <pred> <arg>)` form will either throw or return the given argumen
 ;; {:dt #inst "2022-11-16T19:32:07.397-00:00",
 ;;  :pred string?,
 ;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :loc {:ns taoensso.truss.examples, :line 74, :column 15, :file "..."},
+;;  :loc {:ns truss-examples, :line 74, :column 15, :file "..."},
 ;;  :env {:elidable? true, :*assert* true}}
 ```
 
@@ -225,7 +225,7 @@ You can attach arbitrary debug data to be displayed on violations:
 ;; {:dt #inst "2022-11-16T19:33:39.842-00:00",
 ;;  :pred integer?,
 ;;  :arg  {:form y, :value nil, :type nil},
-;;  :loc  {:ns taoensso.truss.examples, :line 88, :column 15, :file "..."},
+;;  :loc  {:ns truss-examples, :line 88, :column 15, :file "..."},
 ;;  :env  {:elidable? true, :*assert* true},
 ;;  :data {:dynamic nil, :arg {:ring-req {:foo :bar}}}}
 ```
@@ -259,7 +259,7 @@ And you can attach shared debug data at the `binding` level:
 ;; {:dt #inst "2022-11-16T19:34:14.006-00:00",
 ;;  :pred string?,
 ;;  :arg  {:form 42, :value 42, :type java.lang.Long},
-;;  :loc  {:ns taoensso.truss.examples, :line 113, :column 3, :file "..."},
+;;  :loc  {:ns truss-examples, :line 113, :column 3, :file "..."},
 ;;  :env  {:elidable? true, :*assert* true},
 ;;  :data {:dynamic {:ring-session {:user-name "Stu"}}, :arg nil}}
 ```

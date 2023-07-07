@@ -1,4 +1,4 @@
-(ns taoensso.truss.examples
+(ns truss-examples
   {:author "Peter Taoussanis (@ptaoussanis)"}
   (:require [taoensso.truss :as truss :refer [have have! have?]]))
 
@@ -14,11 +14,11 @@
 
 (square 5)   ; => 25
 (square nil) ; =>
-;; Invariant failed at taoensso.truss.examples|9: (integer? nil)
+;; Invariant failed at truss-examples|9: (integer? nil)
 ;; {:dt #inst "2022-11-16T19:28:18.587-00:00",
 ;;  :pred integer?,
 ;;  :arg {:form n, :value nil, :type nil},
-;;  :loc {:ns taoensso.truss.examples, :line 9, :column 1, :file "..."},
+;;  :loc {:ns truss-examples, :line 9, :column 1, :file "..."},
 ;;  :env {:elidable? true, :*assert* true}}
 )
 
@@ -35,23 +35,23 @@
 
 ;; Anything that fails the predicate will throw an error
 (have string? 42) ; =>
-;; Invariant failed at taoensso.truss.examples|37: (string? 42)
+;; Invariant failed at truss-examples|37: (string? 42)
 ;; {:dt #inst "2022-11-16T19:29:49.004-00:00",
 ;;  :pred string?,
 ;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :loc {:ns taoensso.truss.examples, :line 37, :column 1, :file "..."},
+;;  :loc {:ns truss-examples, :line 37, :column 1, :file "..."},
 ;;  :env {:elidable? true, :*assert* true}}
 
 ;; Truss also automatically traps and handles exceptions
 (have string? (/ 1 0)) ; =>
-;; Invariant failed at taoensso.truss.examples|46:
+;; Invariant failed at truss-examples|46:
 ;;   (string? truss/undefined-arg)
 ;;
 ;;   Error evaluating arg: Divide by zero
 ;;   {:dt #inst "2022-11-16T19:30:15.945-00:00",
 ;;    :pred string?,
 ;;    :arg {:form (/ 1 0), :value truss/undefined-arg, :type truss/undefined-arg},
-;;    :loc {:ns taoensso.truss.examples, :line 46, :column 1, :file "..."},
+;;    :loc {:ns truss-examples, :line 46, :column 1, :file "..."},
 ;;    :env {:elidable? true, :*assert* true},
 ;;    :err #error {
 ;;    :cause "Divide by zero"
@@ -73,11 +73,11 @@
 ;; This won't compromise error message clarity
 (let [[x y z] (have string? "foo" 42 "baz")]
   (str x y z)) ; =>
-;; Invariant failed at taoensso.truss.examples|74: (string? 42)
+;; Invariant failed at truss-examples|74: (string? 42)
 ;; {:dt #inst "2022-11-16T19:32:07.397-00:00",
 ;;  :pred string?,
 ;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :loc {:ns taoensso.truss.examples, :line 74, :column 15, :file "..."},
+;;  :loc {:ns truss-examples, :line 74, :column 15, :file "..."},
 ;;  :env {:elidable? true, :*assert* true}}
 )
 
@@ -89,11 +89,11 @@
     (* x y)))
 
 (my-handler {:foo :bar} 5 nil) ; =>
-;; Invariant failed at taoensso.truss.examples|88: (integer? nil)
+;; Invariant failed at truss-examples|88: (integer? nil)
 ;; {:dt #inst "2022-11-16T19:33:39.842-00:00",
 ;;  :pred integer?,
 ;;  :arg  {:form y, :value nil, :type nil},
-;;  :loc  {:ns taoensso.truss.examples, :line 88, :column 15, :file "..."},
+;;  :loc  {:ns truss-examples, :line 88, :column 15, :file "..."},
 ;;  :env  {:elidable? true, :*assert* true},
 ;;  :data {:dynamic nil, :arg {:ring-req {:foo :bar}}}}
 )
@@ -121,11 +121,11 @@
 
 (wrapped-ring-handler
   {:method :get :uri "/" :session {:user-name "Stu"}}) ; =>
-;; Invariant failed at taoensso.truss.examples|113: (string? 42)
+;; Invariant failed at truss-examples|113: (string? 42)
 ;; {:dt #inst "2022-11-16T19:34:14.006-00:00",
 ;;  :pred string?,
 ;;  :arg  {:form 42, :value 42, :type java.lang.Long},
-;;  :loc  {:ns taoensso.truss.examples, :line 113, :column 3, :file "..."},
+;;  :loc  {:ns truss-examples, :line 113, :column 3, :file "..."},
 ;;  :env  {:elidable? true, :*assert* true},
 ;;  :data {:dynamic {:ring-session {:user-name "Stu"}}, :arg nil}}
 )

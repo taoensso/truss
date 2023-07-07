@@ -145,7 +145,7 @@ Having the freedom to reinforce code only **where and when you judge it worthwhi
 
 ## Examples!
 
-> All examples are from [`src/taoensso/truss/examples.cljc`](https://github.com/ptaoussanis/truss/blob/master/src/taoensso/truss/examples.cljc)
+> All examples are from [`/examples/truss_examples.cljc`](/examples/truss_examples.cljc)
 
 Truss's sweet spot is often in longer, complex code (difficult to show here). So these examples are mostly examples of **syntax**, not **use case**. In particular, they mostly focus on simple **argument type assertions** since those are the easiest to understand.
 

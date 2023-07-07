@@ -1,4 +1,4 @@
-(ns taoensso.truss.impl
+(ns ^:no-doc taoensso.truss.impl
   "Private implementation details."
   (:refer-clojure :exclude [some?])
   (:require
@@ -55,7 +55,8 @@
 #?(:clj
    (defn get-source [form env]
      (let [{:keys [line column file]} (meta form)]
-       {:line   line
+       {:ns     (str *ns*)
+        :line   line
         :column column
         :file
         (if (:ns env) ; Compiling cljs
@@ -258,8 +259,6 @@
 
         output)))))
 
-(defn- ns-sym [] (symbol (str *ns*)))
-
 #?(:clj
    (defn const-form? "See issue #12" [x]
      (not (or (list? x) (instance? clojure.lang.Cons x)))))
@@ -270,18 +269,19 @@
      [elidable? truthy? source pred x ?data-fn]
      (let [const-x? (const-form? x) ; Common case
            [pred* safe-pred?] (xpred #?(:clj nil :cljs &env) pred)
-           {:keys [line column file]} source]
+           {:keys [ns line column file]} source
+           ns-sym (symbol ns)]
 
        (if const-x? ; Common case
          (if safe-pred? ; Common case
            `(if (~pred* ~x)
               ~(if truthy? true x)
-              (-invar-violation! ~elidable? '~(ns-sym) ~line ~column ~file '~pred '~x ~x nil ~?data-fn))
+              (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred '~x ~x nil ~?data-fn))
 
            `(let [~'e (catching (if (~pred* ~x) nil -dummy-error) ~'e ~'e)]
               (if (nil? ~'e)
                 ~(if truthy? true x)
-                (-invar-violation! ~elidable? '~(ns-sym) ~line ~column ~file '~pred '~x ~x ~'e ~?data-fn))))
+                (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred '~x ~x ~'e ~?data-fn))))
 
          (if safe-pred?
            `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
@@ -291,7 +291,7 @@
 
               (if (nil? ~'e)
                 ~(if truthy? true 'z)
-                (-invar-violation! ~elidable? '~(ns-sym) ~line ~column ~file '~pred '~x ~'z ~'e ~?data-fn)))
+                (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred '~x ~'z ~'e ~?data-fn)))
 
            `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
                   ~'e (catching
@@ -301,7 +301,7 @@
 
               (if (nil? ~'e)
                 ~(if truthy? true 'z)
-                (-invar-violation! ~elidable? '~(ns-sym) ~line ~column ~file '~pred '~x ~'z ~'e ~?data-fn))))))))
+                (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred '~x ~'z ~'e ~?data-fn))))))))
 
 (comment
   (macroexpand '(-invar true false 1      string?    "foo"             nil)) ; Type 0

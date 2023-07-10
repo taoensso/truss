@@ -19,8 +19,8 @@
   :plugins
   [[lein-pprint    "1.3.2"]
    [lein-ancient   "0.7.0"]
-   [lein-codox     "0.10.8"]
-   [lein-cljsbuild "1.1.8"]]
+   [lein-cljsbuild "1.1.8"]
+   [com.taoensso.forks/lein-codox "0.10.9"]]
 
   :codox
   {:language #{:clojure :clojurescript}
@@ -38,7 +38,7 @@
    :c1.10    {:dependencies [[org.clojure/clojure       "1.10.3"]]}
    :c1.9     {:dependencies [[org.clojure/clojure       "1.9.0"]]}
    :test     {:dependencies [[org.clojure/test.check    "1.1.1"]
-                             [com.taoensso/encore       "3.60.0"
+                             [com.taoensso/encore       "3.62.0"
                               :exclusions [com.taoensso/truss]]]}
 
    :graal-tests

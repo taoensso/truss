@@ -54,17 +54,26 @@
 
 #?(:clj
    (defn get-source [form env]
-     (let [{:keys [line column file]} (meta form)]
+     (let [{:keys [line column file]} (meta form)
+           file
+           (if (:ns env)
+
+             ;; Compiling cljs
+             ;; Note that meta (and thus file) can be nil due to CLJ-865
+             (if-let [classpath-file (and file (io/resource file))]
+               (.getPath (io/file classpath-file))
+               file)
+
+             ;; Compiling clj
+             (when-let [f *file*]
+               (let [f (str f)]
+                 (when-not (contains? #{"NO_SOURCE_PATH" "NO_SOURCE_FILE"} f)
+                   f))))]
+
        {:ns     (str *ns*)
         :line   line
         :column column
-        :file
-        (if (:ns env) ; Compiling cljs
-          ;; Note that meta (and thus file) can be nil due to CLJ-865
-          (if-let [classpath-file (and file (io/resource file))]
-            (.getPath (io/file classpath-file))
-            file)
-          *file*)})))
+        :file   file})))
 
 ;;;; Truss
 

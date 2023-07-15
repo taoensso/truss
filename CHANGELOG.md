@@ -1,5 +1,16 @@
 This project uses [Break Versioning](https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md).
 
+## `1.10.1` (2023-07-15)
+
+> 📦 [Available on Clojars](https://clojars.org/com.taoensso/truss/versions/1.10.1)
+
+This is a **hotfix release**, please upgrade if you're using `1.10.0`.
+
+### Fixes since `1.10.0`
+
+* 46b2f69 [fix] Prevent `get-source` from throwing for JAR resources
+
+
 ## `1.10.0` (2023-07-07)
 
 > 📦 [Available on Clojars](https://clojars.org/com.taoensso/truss/versions/1.10.0)

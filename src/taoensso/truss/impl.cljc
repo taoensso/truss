@@ -56,24 +56,23 @@
    (defn get-source [form env]
      (let [{:keys [line column file]} (meta form)
            file
-           (if (:ns env)
-
-             ;; Compiling cljs
-             ;; Note that meta (and thus file) can be nil due to CLJ-865
-             (if-let [classpath-file (and file (io/resource file))]
-               (.getPath (io/file classpath-file))
-               file)
-
-             ;; Compiling clj
-             (when-let [f *file*]
-               (let [f (str f)]
-                 (when-not (contains? #{"NO_SOURCE_PATH" "NO_SOURCE_FILE"} f)
-                   f))))]
+           (if-not (:ns env)
+             *file* ; Compiling clj
+             (or    ; Compiling cljs
+               (when-let [url (and file (try (io/resource file) (catch Throwable _ nil)))]
+                 (try (.getPath (io/file url)) (catch Throwable _ nil))
+                 (do            (str     url)))
+               file))]
 
        {:ns     (str *ns*)
         :line   line
         :column column
-        :file   file})))
+        :file
+        (when (string? file)
+          (when-not (contains? #{"NO_SOURCE_PATH" "NO_SOURCE_FILE" ""} file)
+            file))})))
+
+(comment (io/resource "taoensso/truss.cljc"))
 
 ;;;; Truss
 

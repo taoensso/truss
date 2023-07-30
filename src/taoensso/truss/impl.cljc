@@ -1,10 +1,8 @@
 (ns ^:no-doc taoensso.truss.impl
   "Private implementation details."
-  (:refer-clojure :exclude [some?])
   (:require
    [clojure.set :as set]
-   #?(:clj  [clojure.java.io :as io])
-   #?(:cljs [cljs.analyzer]))
+   #?(:clj [clojure.java.io :as io]))
   #?(:cljs (:require-macros [taoensso.truss.impl :refer [catching]])))
 
 (comment (require '[taoensso.encore :as enc]))
@@ -39,12 +37,6 @@
 
 (comment (revery integer? [1 2 3]) (revery integer? nil))
 
-#?(:cljs (defn ^boolean some? [x] (if (nil? x) false true))
-   :clj
-   (defn some?
-     {:inline (fn [x] `(if (identical? ~x nil) false true))}
-     [x] (if (identical? x nil) false true)))
-
 (defn ensure-set [x] (if (set? x) x (set x)))
 (let [ensure-set ensure-set]
   (defn #?(:clj ks=      :cljs ^boolean ks=)      [ks m] (=             (set (keys m)) (ensure-set ks)))
@@ -74,6 +66,34 @@
 
 (comment (io/resource "taoensso/truss.cljc"))
 
+#?(:clj
+   (let [resolve-clj clojure.core/resolve
+         resolve-cljs
+         (when-let [ns (find-ns 'cljs.analyzer.api)]
+           (when-let [v (ns-resolve ns 'resolve)] @v))]
+
+     (defn resolve-var
+       #?(:clj ([sym] (resolve-clj sym)))
+       ([env sym]
+        (when (symbol? sym)
+          (if (:ns env)
+            (when resolve-cljs (resolve-cljs env sym))
+            (do                (resolve-clj  env sym))))))))
+
+(comment (resolve-var nil 'string?))
+
+#?(:clj
+   (defn- var->sym [cljs? v]
+     (let [m (if cljs? v (meta v))]
+       (symbol (str (:ns m)) (name (:name m))))))
+
+#?(:clj
+   (defn resolve-sym
+     #?(:clj ([sym] (when-let [v (resolve-var     sym)] (var->sym false     v))))
+     ([env sym]     (when-let [v (resolve-var env sym)] (var->sym (:ns env) v)))))
+
+(comment (resolve-sym nil 'string?))
+
 ;;;; Truss
 
 (defn default-error-fn [data_]
@@ -83,64 +103,78 @@
 (def ^:dynamic *data* nil)
 (def ^:dynamic *error-fn* default-error-fn)
 
-(defn  safe [pred] (fn [x] (catching (pred x))))
-(defn- safe?
-   "[Optimization] Returns true for common preds that are naturally non-throwing."
-   [env p]
-   (or
-     (keyword? p)
-     (map?     p)
-     (set?     p)
-     (let [p
-           (if (symbol? p)
-             (if-let [v #?(:clj  (resolve                       p)
-                           :cljs (cljs.analyzer/resolve-var env p))]
-               @v p)
-             p)]
+(def ^:private safe-pred-forms
+  (let [names
+        (mapv name
+          '#{nil? some? string? integer? number? symbol? keyword? float?
+             set? vector? coll? list? ifn? fn? associative? sequential? delay?
+             sorted? counted? reversible? true? false? identity not boolean})]
 
-       (contains?
-         #{nil? #_some? string? integer? number? symbol? keyword? float?
-           set? vector? coll? list? ifn? fn? associative? sequential? delay?
-           sorted? counted? reversible? true? false? identity not boolean}
-         p))))
+    (-> #{}
+      (into (mapv #(symbol "clojure.core" %) names))
+      (into (mapv #(symbol    "cljs.core" %) names)))))
 
-(comment (safe? nil 'nil?))
+(defn safe-pred [pred] (fn [x] (catching (pred x))))
+#?(:clj
+   (defn- safe-pred-form?
+     "Returns true for common preds that can't throw."
+     [env pred-form]
+     (or
+       (keyword? pred-form)
+       (map?     pred-form)
+       (set?     pred-form)
+       (when-let [rsym (resolve-sym env pred-form)]
+         (contains? safe-pred-forms rsym)))))
+
+(comment (safe-pred-form? nil 'nil?))
 
 #?(:clj
-   (defn- xpred
-     "Expands any special predicate forms and returns [<expanded-pred> <safe?>]."
-     [env pred]
-     (if-not (vector? pred)
-       [pred (safe? env pred)]
-       (let [[type a1 a2 a3] pred]
-         (assert a1 "Special predicate [<special-type> <arg>] form w/o <arg>")
+   (defn parse-pred-form
+     "Returns {:keys [pred rsym safe?]}"
+     [env pred-form]
+     (cond
+       (= pred-form ::some?) (parse-pred-form env `some?)
+       (not (vector? pred-form))
+       {:pred-form                  pred-form
+        :rsym  (resolve-sym     env pred-form)
+        :safe? (safe-pred-form? env pred-form)}
+
+       :else
+       (let [[type a1 a2 a3]      pred-form
+             num-args (dec (count pred-form))]
+
+         (when (or (< num-args 1) (> num-args 3))
+           (throw (ex-info "Truss special predicates should have 1≤n≤3"
+                    {:pred-form pred-form})))
+
          (case type
-           :set=             [`(fn [~'x] (=             (ensure-set ~'x) (ensure-set ~a1))) false]
-           :set<=            [`(fn [~'x] (set/subset?   (ensure-set ~'x) (ensure-set ~a1))) false]
-           :set>=            [`(fn [~'x] (set/superset? (ensure-set ~'x) (ensure-set ~a1))) false]
-           :ks=              [`(fn [~'x] (ks=      ~a1 ~'x)) false]
-           :ks<=             [`(fn [~'x] (ks<=     ~a1 ~'x)) false]
-           :ks>=             [`(fn [~'x] (ks>=     ~a1 ~'x)) false]
-           :ks-nnil?         [`(fn [~'x] (ks-nnil? ~a1 ~'x)) false]
-           (    :el     :in) [`(fn [~'x]      (contains? (ensure-set ~a1) ~'x))  false]
-           (:not-el :not-in) [`(fn [~'x] (not (contains? (ensure-set ~a1) ~'x))) false]
+           :set=             {:pred-form `(fn [~'x] (=             (ensure-set ~'x) (ensure-set ~a1)))}
+           :set<=            {:pred-form `(fn [~'x] (set/subset?   (ensure-set ~'x) (ensure-set ~a1)))}
+           :set>=            {:pred-form `(fn [~'x] (set/superset? (ensure-set ~'x) (ensure-set ~a1)))}
 
-           :n=               [`(fn [~'x] (=  (count ~'x) ~a1)) false]
-           :n>=              [`(fn [~'x] (>= (count ~'x) ~a1)) false]
-           :n<=              [`(fn [~'x] (<= (count ~'x) ~a1)) false]
+           :ks=              {:pred-form `(fn [~'x] (ks=      ~a1 ~'x))}
+           :ks<=             {:pred-form `(fn [~'x] (ks<=     ~a1 ~'x))}
+           :ks>=             {:pred-form `(fn [~'x] (ks>=     ~a1 ~'x))}
+           :ks-nnil?         {:pred-form `(fn [~'x] (ks-nnil? ~a1 ~'x))}
+           (    :el     :in) {:pred-form `(fn [~'x]      (contains? (ensure-set ~a1) ~'x))}
+           (:not-el :not-in) {:pred-form `(fn [~'x] (not (contains? (ensure-set ~a1) ~'x)))}
 
-           :instance?        [`(fn [~'x] (instance?  ~a1 ~'x)) false]
-           :satisfies?       [`(fn [~'x] (satisfies? ~a1 ~'x)) false]
+           :n=               {:pred-form `(fn [~'x] (=  (count ~'x) ~a1))}
+           :n>=              {:pred-form `(fn [~'x] (>= (count ~'x) ~a1))}
+           :n<=              {:pred-form `(fn [~'x] (<= (count ~'x) ~a1))}
 
-           ;; Pred composition
-           (let [self (fn [?pred] (when ?pred (xpred env ?pred)))
+           :instance?        {:pred-form `(fn [~'x] (instance?  ~a1 ~'x))}
+           :satisfies?       {:pred-form `(fn [~'x] (satisfies? ~a1 ~'x))}
 
-                 ;; Support recursive expansion:
-                 [[a1 sf-a1?] [a2 sf-a2?] [a3 sf-a3?]] [(self a1) (self a2) (self a3)]
+           (:and :or :not) ; Composition
+           (let [;;; Support recursive expansion
+                 {a1 :pred-form, sf-a1? :safe?} (when a1 (parse-pred-form env a1))
+                 {a2 :pred-form, sf-a2? :safe?} (when a2 (parse-pred-form env a2))
+                 {a3 :pred-form, sf-a3? :safe?} (when a3 (parse-pred-form env a3))
 
-                 sf-a1    (when a1 (if sf-a1? a1 `(safe ~a1)))
-                 sf-a2    (when a2 (if sf-a2? a2 `(safe ~a2)))
-                 sf-a3    (when a3 (if sf-a3? a3 `(safe ~a3)))
+                 sf-a1    (when a1 (if sf-a1? a1 `(safe-pred ~a1)))
+                 sf-a2    (when a2 (if sf-a2? a2 `(safe-pred ~a2)))
+                 sf-a3    (when a3 (if sf-a3? a3 `(safe-pred ~a3)))
                  sf-comp? (cond a3 (and sf-a1? sf-a2? sf-a3?)
                                 a2 (and sf-a1? sf-a2?)
                                 a1      sf-a1?)]
@@ -148,32 +182,35 @@
              (case type
                :and ; all-of
                (cond
-                 a3 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x) (~a3 ~'x))) sf-comp?]
-                 a2 [`(fn [~'x] (and (~a1 ~'x) (~a2 ~'x)))           sf-comp?]
-                 a1 [a1                                                sf-a1?])
+                 a3 {:safe? sf-comp?, :pred-form `(fn [~'x] (and (~a1 ~'x) (~a2 ~'x) (~a3 ~'x)))}
+                 a2 {:safe? sf-comp?, :pred-form `(fn [~'x] (and (~a1 ~'x) (~a2 ~'x)))}
+                 a1 {:safe? sf-a1?,   :pred-form a1})
 
                :or ; any-of
                (cond
-                 a3 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x) (~sf-a3 ~'x))) true]
-                 a2 [`(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x)))              true]
-                 a1 [a1                                                    sf-a1?])
+                 a3 {:safe? true,   :pred-form `(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x) (~sf-a3 ~'x)))}
+                 a2 {:safe? true,   :pred-form `(fn [~'x] (or (~sf-a1 ~'x) (~sf-a2 ~'x)))}
+                 a1 {:safe? sf-a1?, :pred-form a1})
 
                :not ; complement/none-of
-               ;; Note that it's a little ambiguous whether we'd want
-               ;; safe (non-throwing) behaviour here or not so choosing
-               ;; to interpret throws as undefined to minimize surprise
+               ;; It's unclear if we'd want safe (non-throwing) behaviour here,
+               ;; so will nterpret throws as undefined to minimize surprize
                (cond
-                 a3 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x) (~a3 ~'x)))) sf-comp?]
-                 a2 [`(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x))))           sf-comp?]
-                 a1 [`(fn [~'x] (not     (~a1 ~'x)))                        sf-a1?]))))))))
+                 a3 {:safe? sf-comp?, :pred-form `(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x) (~a3 ~'x))))}
+                 a2 {:safe? sf-comp?, :pred-form `(fn [~'x] (not (or (~a1 ~'x) (~a2 ~'x))))}
+                 a1 {:safe? sf-a1?,   :pred-form `(fn [~'x] (not     (~a1 ~'x)))})))
+
+           (throw (ex-info "Unexpected Truss special predicate type"
+                    {:pred-form pred-form})))))))
 
 (comment
-  (xpred nil string?)
-  (xpred nil [:or string? integer? :foo]) ; t
-  (xpred nil [:or string? integer? seq])  ; f
-  (xpred nil [:or string? integer? [:and number? integer?]]) ; t
-  (xpred nil [:or string? integer? [:and number? pos?]])     ; f
-  )
+  [(parse-pred-form nil ::some?)
+   (parse-pred-form nil 'string?)
+   (parse-pred-form nil 'seq)
+   (parse-pred-form nil [:or  'string? 'seq])
+   (parse-pred-form nil [:and 'string? 'integer?])
+   (parse-pred-form nil [:and 'string? 'seq])
+   (parse-pred-form nil [:and 'integer? [:and 'number? 'pos? 'int?]])])
 
 ;; #?(:clj
 ;;    (defn- fast-pr-str
@@ -196,7 +233,7 @@
 (defn -assertion-error [msg] #?(:clj (AssertionError. msg) :cljs (js/Error. msg)))
 (def  -dummy-error #?(:clj (Object.) :cljs (js-obj)))
 (defn -invar-violation!
-  [elidable? ns-sym ?line ?column ?file pred arg-form arg ?err ?data-fn]
+  [elidable? ns-sym ?line ?column ?file pred-form pred-rsym arg-form arg ?err ?data-fn]
   (when-let [error-fn *error-fn*]
     (error-fn ; Nb consumer must deref while bindings are still active
      (delay
@@ -224,10 +261,11 @@
 
             msg_
             (delay
-              (let [msg
+              (let [;arg-form (if (nil? arg-form) 'nil arg-form)
+                    msg
                     (str "Invariant failed at " ns-sym
                       (when ?line (str "|" ?line #_(when ?column (str "." ?column)))) ": "
-                      (list pred #_arg-form arg-val))]
+                      (list pred-form #_arg-form arg-val))]
 
                 (if-let [err ?err]
                   (let [err-msg #_(ex-message err) (error-message err)]
@@ -254,13 +292,13 @@
             output
             {:msg_ msg_
              :dt   instant
-             :pred pred
-             :loc  loc
+             :pred pred-form
              :arg  {:form      arg-form
                     :value     arg-val
                     :type      arg-type}
              :env  {:elidable? elidable?
-                    :*assert*  *assert*}}
+                    :*assert*  *assert*}
+             :loc  loc}
 
             output (if-let [v ?data] (assoc output :data v) output)
             output (if-let [v ?err]  (assoc output :err  v) output)]
@@ -274,42 +312,46 @@
 #?(:clj
    (defmacro -invar
      "Written to maximize performance + minimize post Closure+gzip Cljs code size."
-     [elidable? truthy? source pred x ?data-fn]
+     [elidable? truthy? source pred-form x ?data-fn]
      (let [const-x? (const-form? x) ; Common case
-           [pred* safe-pred?] (xpred #?(:clj nil :cljs &env) pred)
+
            {:keys [ns line column file]} source
-           ns-sym (symbol ns)]
+           ns-sym (symbol ns)
+
+           {pred-form* :pred-form,
+            pred-safe? :safe?,
+            pred-rsym  :rsym} (parse-pred-form &env pred-form)]
 
        (if const-x? ; Common case
-         (if safe-pred? ; Common case
-           `(if (~pred* ~x)
+         (if pred-safe? ; Common case
+           `(if (~pred-form* ~x)
               ~(if truthy? true x)
-              (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred '~x ~x nil ~?data-fn))
+              (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred-form '~pred-rsym '~x ~x nil ~?data-fn))
 
-           `(let [~'e (catching (if (~pred* ~x) nil -dummy-error) ~'e ~'e)]
+           `(let [~'e (catching (if (~pred-form* ~x) nil -dummy-error) ~'e ~'e)]
               (if (nil? ~'e)
                 ~(if truthy? true x)
-                (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred '~x ~x ~'e ~?data-fn))))
+                (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred-form '~pred-rsym '~x ~x ~'e ~?data-fn))))
 
-         (if safe-pred?
+         (if pred-safe?
            `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
                   ~'e (if (instance? WrappedError ~'z)
                         ~'z
-                        (if (~pred* ~'z) nil -dummy-error))]
+                        (if (~pred-form* ~'z) nil -dummy-error))]
 
               (if (nil? ~'e)
                 ~(if truthy? true 'z)
-                (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred '~x ~'z ~'e ~?data-fn)))
+                (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred-form '~pred-rsym '~x ~'z ~'e ~?data-fn)))
 
            `(let [~'z (catching ~x ~'e (WrappedError. ~'e))
                   ~'e (catching
                         (if (instance? WrappedError ~'z)
                           ~'z
-                          (if (~pred* ~'z) nil -dummy-error)) ~'e ~'e)]
+                          (if (~pred-form* ~'z) nil -dummy-error)) ~'e ~'e)]
 
               (if (nil? ~'e)
                 ~(if truthy? true 'z)
-                (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred '~x ~'z ~'e ~?data-fn))))))))
+                (-invar-violation! ~elidable? '~ns-sym ~line ~column ~file '~pred-form '~pred-rsym '~x ~'z ~'e ~?data-fn))))))))
 
 (comment
   (macroexpand '(-invar true false 1      string?    "foo"             nil)) ; Type 0
@@ -348,7 +390,7 @@
            args       (if data? (butlast (butlast args)) args)
 
            auto-pred? (= (count args) 1) ; Unique common case: (have ?x)
-           pred       (if auto-pred? 'taoensso.truss.impl/some? (first args))
+           pred       (if auto-pred? ::some? (first args))
            [?x1 ?xs]  (if auto-pred?
                         [(first args) nil]
                         (if (nnext args) [nil (next args)] [(second args) nil]))

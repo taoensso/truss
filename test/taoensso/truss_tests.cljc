@@ -7,14 +7,22 @@
    [taoensso.truss.impl :as impl])
 
   #?(:cljs
-     (:require-macros [taoensso.truss-tests :refer
-                       [my-macro1 my-macro2 my-macro3]])))
+     (:require-macros
+      [taoensso.truss-tests :refer
+       [parse-pred-form my-macro1 my-macro2 my-macro3]])))
 
 (comment
   (remove-ns      'taoensso.truss-tests)
   (test/run-tests 'taoensso.truss-tests))
 
 ;;;; High-level
+
+#?(:clj
+   (defmacro parse-pred-form [pred-form]
+     (let [parsed (impl/parse-pred-form &env pred-form)]
+       `'~parsed)))
+
+(defn- my-pred [pass?] (boolean pass?))
 
 (deftest _basics
   [(testing "Falsey vals"
@@ -89,6 +97,12 @@
       (is (throws? :common {:arg {:value 1}} (have string? :in ["a" 1])))
       (is (= [["a" "b"] ["a" "b"]]           (have string? :in ["a" "b"] ["a" "b"])))
       (is (throws? :common {:arg {:value 1}} (have string? :in ["a" "b"] ["a" "b" 1])))])
+
+   (testing "Safe preds"
+     [(is      (:safe? (parse-pred-form string?)))
+      (is (not (:safe? (parse-pred-form seq))))
+      (is (=   (:rsym  (parse-pred-form string?)) #?(:clj 'clojure.core/string?
+                                                     :cljs   'cljs.core/string?)))])
 
    (testing "Special preds"
      [(is (= nil     (have [:or nil? string?] nil)))

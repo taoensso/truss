@@ -3,17 +3,17 @@
 
 # Truss
 
-#### Assertions micro-library for Clojure/Script
+### Assertions micro-library for Clojure/Script
 
 **Truss** is a tiny Clojure/Script library that provides fast and flexible **runtime assertions** with **terrific error messages**. Use it as a complement or alternative to [clojure.spec](https://clojure.org/about/spec), [core.typed](https://github.com/clojure/core.typed), etc.
 
-<img src="hero.png" width="600" alt="Egyptian ship with rope truss, the oldest known use of trusses (about 1250 BC)."/>
+<img width="600" src="../../blob/master/hero.png" alt="Egyptian ship with rope truss, the oldest known use of trusses (about 1250 BC)."/>
 
 > A doubtful friend is worse than a certain enemy. Let a man be one thing or the other, and we then know how to meet him. - Aesop
 
 ## Latest release/s
 
-- `2023-07-31` `1.11.0`: [changes](../../releases/tag/v1.11.0)
+- `2023-07-31` `1.11.0`: [release info](../../releases/tag/v1.11.0)
 
 [![Main tests][Main tests SVG]][Main tests URL]
 [![Graal tests][Graal tests SVG]][Graal tests URL]
@@ -30,24 +30,20 @@ See [here][GitHub releases] for earlier releases.
 - No commitment or costly buy-in: use it just when+where needed
 - Perfect for library authors: no bulky dependencies
 
-## Quickstart
+## Video demo
 
-1\. Add the [relevant dependency](#latest-releases) to your project:
+See for  intro and usage:
 
-```clojure
-Leiningen: [com.taoensso/truss               "x-y-z"] ; or
-deps.edn:   com.taoensso/truss {:mvn/version "x-y-z"}
-```
+<a href="https://www.youtube.com/watch?v=gMB4Y-EIArA" target="_blank">
+ <img src="https://img.youtube.com/vi/gMB4Y-EIArA/maxresdefault.jpg" alt="Truss demo video" width="480" border="0" />
+</a>
 
-2\. Setup your namespace imports:
-
-```clojure
-(ns my-ns (:require [taoensso.truss :as truss :refer (have have! have?)]))
-```
-
-3\. Truss uses the simple `(predicate arg)` pattern familiar to Clojure users:
+## Quick example
 
 ```clojure
+(require '[taoensso.truss :as truss :refer [have have?]])
+
+;; Truss uses the simple `(predicate arg)` pattern familiar to Clojure users:
 (defn square [n]
   (let [n (have integer? n)] ; <- A Truss assertion
     (* n n)))
@@ -69,31 +65,20 @@ deps.edn:   com.taoensso/truss {:mvn/version "x-y-z"}
 ;;   :file "examples/truss_examples.cljc"}}
 ```
 
-That's everything most users will need to know, but see the [documentation](#documentation) for more.
+That's everything most users will need to know, but see the [documentation](#documentation) below for more!
 
 ## Documentation
 
-- [Full documentation][GitHub wiki] (detailed usage, etc.)
-- Auto-generated API reference: [Codox][Codox docs], [clj-doc][clj-doc docs]
-
-## Motivation
-
-<a href="https://youtu.be/gMB4Y-EIArA" title="Truss talk (YouTube)">
-<img src="https://raw.githubusercontent.com/ptaoussanis/truss/master/talk.jpg" width="600"/>
-</a>
-
-See [here][GitHub wiki] for more.
+- [Wiki][GitHub wiki] (getting started, usage, etc.)
+- API reference: [cljdoc][cljdoc docs], [Codox][Codox docs]][cljdoc docs]
 
 ## Funding
 
-You can [help support continued work][funding] on this project, thank you!! 🙏
-
-Copyright &copy; 2015-2023 [Peter Taoussanis][].  
-Licensed under [EPL 1.0](LICENSE.txt) (same as Clojure).
+You can [help support][sponsor] continued work on this project, thank you!! 🙏
 
 ## License
 
-Copyright &copy; 2014-2023 [Peter Taoussanis][].  
+Copyright &copy; 2014-2024 [Peter Taoussanis][].  
 Licensed under [EPL 1.0](LICENSE.txt) (same as Clojure).
 
 <!-- Common -->
@@ -103,12 +88,12 @@ Licensed under [EPL 1.0](LICENSE.txt) (same as Clojure).
 [GitHub wiki]:     ../../wiki
 
 [Peter Taoussanis]: https://www.taoensso.com
-[funding]:          https://www.taoensso.com/clojure/backers
+[sponsor]:          https://www.taoensso.com/sponsor
 
 <!-- Project -->
 
 [Codox docs]:   https://taoensso.github.io/truss/
-[clj-doc docs]: https://cljdoc.org/d/com.taoensso/truss/
+[cljdoc docs]: https://cljdoc.org/d/com.taoensso/truss/
 
 [Clojars SVG]: https://img.shields.io/clojars/v/com.taoensso/truss.svg
 [Clojars URL]: https://clojars.org/com.taoensso/truss

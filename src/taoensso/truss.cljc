@@ -116,8 +116,8 @@
 
   (macroexpand '(have string? 5))
   (macroexpand '(have string? 5 :data "foo"))
-  (macroexpand '(have string? 5 :data (enc/get-env)))
-  (let [x :x]   (have string? 5 :data (enc/get-env)))
+  (macroexpand '(have string? 5 :data (enc/get-locals)))
+  (let [x :x]   (have string? 5 :data (enc/get-locals)))
 
   (have string? 5)
   (have string? 5 :data {:a "a"})
@@ -125,7 +125,7 @@
 
   ((fn [x]
      (let [a "a" b "b"]
-       (have string? x :data {:env (enc/get-env)}))) 5)
+       (have string? x :data {:env (enc/get-locals)}))) 5)
 
   (do
     (set! *assert* false)

@@ -7,18 +7,29 @@
   {:name "Eclipse Public License - v 1.0"
    :url  "https://www.eclipse.org/legal/epl-v10.html"}
 
-  :dependencies
-  []
+  :test-paths ["test" #_"src"]
+  :dependencies []
 
   :profiles
   {;; :default [:base :system :user :provided :dev]
-   :provided {:dependencies [[org.clojure/clojurescript "1.11.60"]
-                             [org.clojure/clojure       "1.11.1"]]}
-   :c1.11    {:dependencies [[org.clojure/clojure       "1.11.1"]]}
+   :provided {:dependencies [[org.clojure/clojurescript "1.11.132"]
+                             [org.clojure/clojure       "1.11.3"]]}
+   :c1.12    {:dependencies [[org.clojure/clojure       "1.12.0-alpha11"]]}
+   :c1.11    {:dependencies [[org.clojure/clojure       "1.11.3"]]}
    :c1.10    {:dependencies [[org.clojure/clojure       "1.10.3"]]}
    :c1.9     {:dependencies [[org.clojure/clojure       "1.9.0"]]}
-   :test
-   {:jvm-opts ["-Dtaoensso.elide-deprecated=true"]
+
+   :graal-tests
+   {:source-paths ["test"]
+    :main taoensso.graal-tests
+    :aot [taoensso.graal-tests]
+    :uberjar-name "graal-tests.jar"
+    :dependencies
+    [[org.clojure/clojure                  "1.11.3"]
+     [com.github.clj-easy/graal-build-time "1.0.5"]]}
+
+   :dev
+   {:jvm-opts ["-server" "-Dtaoensso.elide-deprecated=true"]
     :global-vars
     {*warn-on-reflection* true
      *assert*             true
@@ -26,30 +37,18 @@
 
     :dependencies
     [[org.clojure/test.check    "1.1.1"]
-     [com.taoensso/encore       "3.77.0"
-      :exclusions [com.taoensso/truss]]]}
+     [com.taoensso/encore       "3.107.0"
+      :exclusions [com.taoensso/truss]]]
 
-   :graal-tests
-   {:dependencies [[org.clojure/clojure "1.11.1"]
-                   [com.github.clj-easy/graal-build-time "0.1.4"]]
-    :main taoensso.graal-tests
-    :aot [taoensso.graal-tests]
-    :uberjar-name "graal-tests.jar"}
+    :plugins
+    [[lein-pprint    "1.3.2"]
+     [lein-ancient   "0.7.0"]
+     [lein-cljsbuild "1.1.8"]
+     [com.taoensso.forks/lein-codox "0.10.11"]]
 
-   :dev
-   [:c1.11 :test
-    {:jvm-opts ["-server"]
-     :plugins
-     [[lein-pprint    "1.3.2"]
-      [lein-ancient   "0.7.0"]
-      [lein-cljsbuild "1.1.8"]
-      [com.taoensso.forks/lein-codox "0.10.10"]]
-
-     :codox
-     {:language #{:clojure :clojurescript}
-      :base-language :clojure}}]}
-
-  :test-paths ["test" #_"src"]
+    :codox
+    {:language #{:clojure :clojurescript}
+     :base-language :clojure}}}
 
   :cljsbuild
   {:test-commands {"node" ["node" "target/test.js"]}
@@ -72,6 +71,6 @@
    "build-once" ["do" ["clean"] ["cljsbuild" "once"]]
    "deploy-lib" ["do" ["build-once"] ["deploy" "clojars"] ["install"]]
 
-   "test-clj"   ["with-profile" "+c1.11:+c1.10:+c1.9" "test"]
-   "test-cljs"  ["with-profile" "+test" "cljsbuild"   "test"]
+   "test-clj"   ["with-profile" "+c1.12:+c1.11:+c1.10:+c1.9" "test"]
+   "test-cljs"  ["with-profile" "+c1.12" "cljsbuild"         "test"]
    "test-all"   ["do" ["clean"] ["test-clj"] ["test-cljs"]]})

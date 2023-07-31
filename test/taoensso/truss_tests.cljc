@@ -142,7 +142,18 @@
         [(is (= "5"                                          (have string? "5")))
          (is (throws? :common {:data {:dynamic {:user 101}}} (have string?  5)))
          (is (throws? :common {:data {:dynamic {:user 101}
-                                      :arg     {:name "Stu"}}} (have string? 5 :data {:name "Stu"})))])])])
+                                      :arg     {:name "Stu"}}} (have string? 5 :data {:name "Stu"})))])])
+
+   (testing "Resolved preds"
+     [(is (throws? :common {:pred 'taoensso.truss-tests/my-pred}  (have my-pred false)))
+
+      (is (throws? :common {:pred #?(:clj 'clojure.core/some?
+                                     :cljs   'cljs.core/some?)}   (have nil)))
+
+      (is (throws? :common {:pred #?(:clj 'clojure.core/string?
+                                     :cljs   'cljs.core/string?)} (have string? nil)))
+
+      (is (throws? :common {:pred '[:or string?]} (have [:or string?] nil)))])])
 
 ;;;;
 

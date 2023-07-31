@@ -264,8 +264,8 @@
               (let [;arg-form (if (nil? arg-form) 'nil arg-form)
                     msg
                     (str "Invariant failed at " ns-sym
-                      (when ?line (str "|" ?line #_(when ?column (str "." ?column)))) ": "
-                      (list pred-form #_arg-form arg-val))]
+                      (when ?line (str "[" ?line (when ?column (str "," ?column)) "]")) ": "
+                      (list pred-form arg-form #_arg-val))]
 
                 (if-let [err ?err]
                   (let [err-msg #_(ex-message err) (error-message err)]
@@ -292,7 +292,7 @@
             output
             {:msg_ msg_
              :dt   instant
-             :pred pred-form
+             :pred (or pred-rsym pred-form)
              :arg  {:form      arg-form
                     :value     arg-val
                     :type      arg-type}

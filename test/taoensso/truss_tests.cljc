@@ -105,9 +105,10 @@
                                                      :cljs   'cljs.core/string?)))])
 
    (testing "Special preds"
-     [(is (= nil     (have [:or nil? string?] nil)))
-      (is (= "hello" (have [:or nil? string?] "hello")))
-      (is (= "hello" (have [:or pos? string?] "hello")))
+     [(is (= nil       (have [:or nil? string?] nil)))
+      (is (= "hello"   (have [:or nil? string?] "hello")))
+      (is (= "hello"   (have [:or pos? string?] "hello")))
+      (is (= ["a" "b"] (have [:or pos? string?] "a" "b")))
 
       (is (throws? :common {:arg {:value -5}}
             (have [:or pos? string?] -5)))

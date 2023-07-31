@@ -25,7 +25,7 @@
      trapping errors. If any pred test fails, throws a detailed assertion error.
      Otherwise returns input val/vals for convenient inline-use/binding.
 
-     Respects *assert* value so tests can be elided from production for zero
+     Respects `*assert*` value so tests can be elided from production for zero
      runtime costs.
 
      Provides a small, simple, flexible feature subset to alternative tools like
@@ -64,8 +64,8 @@
 
 #?(:clj
    (defmacro have!
-     "Like `have` but ignores *assert* value (so can never be elided). Useful
-     for important conditions in production (e.g. security checks)."
+     "Like `have` but ignores `*assert*` value (so can never be elided).
+     Useful for important conditions in production (e.g. security checks)."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
      (let [[&form args] (clj-865-workaround &form args)
@@ -79,7 +79,7 @@
      when the return vals aren't necessary.
 
      **WARNING**: Do NOT use in :pre/:post conds since those are ALWAYS subject
-     to *assert*, directly contradicting the intention of the bang (`!`) here."
+     to `*assert*`, directly contradicting the intention of the bang (`!`) here."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
      (let [[&form args] (clj-865-workaround &form args)
@@ -116,8 +116,8 @@
 
   (macroexpand '(have string? 5))
   (macroexpand '(have string? 5 :data "foo"))
-  (macroexpand '(have string? 5 :data (enc/get-env)))
-  (let [x :x]   (have string? 5 :data (enc/get-env)))
+  (macroexpand '(have string? 5 :data (enc/get-locals)))
+  (let [x :x]   (have string? 5 :data (enc/get-locals)))
 
   (have string? 5)
   (have string? 5 :data {:a "a"})
@@ -125,7 +125,7 @@
 
   ((fn [x]
      (let [a "a" b "b"]
-       (have string? x :data {:env (enc/get-env)}))) 5)
+       (have string? x :data {:env (enc/get-locals)}))) 5)
 
   (do
     (set! *assert* false)
@@ -151,26 +151,24 @@
 
 #?(:clj
    (defmacro keep-callsite
-     "CLJ-865 unfortunately means that it's currently not possible
-     for an inner macro to access the &form metadata of an outer macro.
-
-     This means that inner macros lose call site information like the
-     line number of the outer macro.
+     "The long-standing CLJ-865 means that it's not possible for an inner
+     macro to access the `&form` metadata of a wrapping outer macro. This
+     means that wrapped macros lose calsite info, etc.
 
      This util offers a workaround for macro authors:
-
-       (defmacro my-macro1 [x]                `(truss/have ~x))  ; W/o  call site info
-       (defmacro my-macro2 [x] (keep-callsite `(truss/have ~x))) ; With call site info"
+       (defmacro inner [] (meta &form))
+       (defmacro outer [] (keep-callsite `(inner)))
+       (outer) => {:keys [line column ...]}"
 
      {:added "v1.8.0 (2022-12-13)"}
-     [& body] `(with-meta (do ~@body) (meta ~'&form))))
+     [form] `(with-meta ~form (meta ~'&form))))
 
 (comment
-  (defmacro my-macro1 [x]                `(have ~x))
-  (defmacro my-macro2 [x] (keep-callsite `(have ~x)))
+  (defmacro inner [x]                `(have ~x))
+  (defmacro outer [x] (keep-callsite `(have ~x)))
 
-  (my-macro1 nil)
-  (my-macro2 nil))
+  (inner nil)
+  (outer nil))
 
 (defn get-data
   "Returns current value of dynamic assertion data."

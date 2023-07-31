@@ -5,43 +5,64 @@
 
 (comment (require '[taoensso.encore :as enc]))
 
-;;;;
+;;;; CLJ-865
+
+#?(:clj
+   (defmacro keep-callsite
+     "The long-standing CLJ-865 means that it's not possible for an inner
+     macro to access the `&form` metadata of a wrapping outer macro. This
+     means that wrapped macros lose calsite info, etc.
+
+     This util offers a workaround for macro authors:
+       (defmacro inner [] (meta &form))
+       (defmacro outer [] (keep-callsite `(inner)))
+       (outer) => {:keys [line column ...]}"
+
+     {:added "v1.8.0 (2022-12-13)"}
+     [form] `(with-meta ~form (meta ~'&form))))
 
 #?(:clj
    (defn- clj-865-workaround
      "Experimental undocumented alternative CLJ-865 workaround that
      allows more precise control than `keep-callsite`."
-     [macro-amp-form args]
+     [macro-form args]
      (let [[a0 & an] args]
-       (if-let [given-amp-form (and (map? a0) (get a0 :&form))]
-         [given-amp-form an]
-         [macro-amp-form args]))))
+       (if-let [macro-form* (and (map? a0) (get a0 :&form))]
+         [macro-form* an]
+         [macro-form  args]))))
+
+(comment (clj-865-workaround '() [{:&form "a"} "b"]))
 
 ;;;; Core API
 
 #?(:clj
    (defmacro have
-     "Takes a pred and one or more vals. Tests pred against each val,
-     trapping errors. If any pred test fails, throws a detailed assertion error.
-     Otherwise returns input val/vals for convenient inline-use/binding.
+     "Takes a (fn pred [x]) => truthy, and >=1 vals.
+     Tests pred against each val,trapping errors.
 
-     Respects *assert* value so tests can be elided from production for zero
-     runtime costs.
+     If any pred test fails, throws a detailed `ExceptionInfo`.
+     Otherwise returns input val/s for convenient inline-use/binding.
+
+     Respects `*assert*`, so tests can be elided from production if desired
+     (meaning zero runtime cost).
 
      Provides a small, simple, flexible feature subset to alternative tools like
      clojure.spec, core.typed, prismatic/schema, etc.
 
-       ;; Will throw a detailed error message on invariant violation:
-       (fn my-fn [x] (str/trim (have string? x)))
+     Examples:
 
-     You may attach arbitrary debug info to assertion violations like:
-       `(have string? x :data {:my-arbitrary-debug-info \"foo\"})`
+       (defn my-trim [x] (str/trim (have string? x)))
 
-     Re: use of Truss assertions within other macro bodies:
-       Due to CLJ-865, call site information (e.g. line number) of
-       outer macro will unfortunately be lost.
+       ;; Attach arb optional info to violations using `:data`:
+       (have string? x
+         :data {:my-arbitrary-debug-info \"foo\"})
 
-       See `keep-callsite` util for a workaround.
+       ;; Assert inside collections using `:in`:
+       (have string? :in [\"foo\" \"bar\"])
+
+     Regarding use within other macros:
+       Due to CLJ-865, callsite info like line number of outer macro
+       will be lost. See `keep-callsite` for workaround.
 
      See also `have?`, `have!`."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
@@ -52,10 +73,10 @@
 
 #?(:clj
    (defmacro have?
-     "Like `have` but returns `true` on successful tests. In particular, this
-     can be handy for use with :pre/:post conditions. Compare:
-       (fn my-fn [x] {:post [(have  nil? %)]} nil) ; {:post [nil]} FAILS
-       (fn my-fn [x] {:post [(have? nil? %)]} nil) ; {:post [true]} passes as intended"
+     "Like `have` but returns `true` on successful tests.
+     Handy for `:pre`/`:post` conditions. Compare:
+       ((fn my-fn [] {:post [(have  nil? %)]} nil)) ; {:post [nil ]} FAILS
+       ((fn my-fn [] {:post [(have? nil? %)]} nil)) ; {:post [true]} passes as intended"
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
      (let [[&form args] (clj-865-workaround &form args)
@@ -64,8 +85,8 @@
 
 #?(:clj
    (defmacro have!
-     "Like `have` but ignores *assert* value (so can never be elided). Useful
-     for important conditions in production (e.g. security checks)."
+     "Like `have` but ignores `*assert*` value (so can never be elided!).
+     Useful for important conditions in production (e.g. security checks)."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
      (let [[&form args] (clj-865-workaround &form args)
@@ -74,12 +95,11 @@
 
 #?(:clj
    (defmacro have!?
-     "Specialized cross between `have?` and `have!`. Not used often but can be
-     handy for semantic clarification and/or to improve multi-val performance
-     when the return vals aren't necessary.
-
-     **WARNING**: Do NOT use in :pre/:post conds since those are ALWAYS subject
-     to *assert*, directly contradicting the intention of the bang (`!`) here."
+     "Returns `true` on successful tests, and ignores `*assert*` value
+     (so can never be elided!).
+  
+     **WARNING**: Do NOT use in `:pre`/`:post` conditions since those always
+     respect `*assert*`, contradicting the intention of the bang (`!`) here."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
      (let [[&form args] (clj-865-workaround &form args)
@@ -91,33 +111,28 @@
   (macroexpand '(have a))
   (macroexpand '(have? [:or nil? string?] "hello"))
 
-  (enc/qb 1e5
+  (enc/qb 1e6 ; [260.08 294.62]
     (with-error-fn nil                   (have? string? 5))
     (with-error-fn (fn [_] :truss/error) (have? string? 5)))
 
   (have string? (range 1000)))
 
 (comment
-  ;; HotSpot is great with these:
-  (enc/qb 1e4
+  (enc/qb 1e6 ; [37.97 46.3 145.57 131.99 128.65]
     (string? "a")
     (have?   "a")
     (have            string?  "a" "b" "c")
     (have? [:or nil? string?] "a" "b" "c")
     (have? [:or nil? string?] "a" "b" "c" :data "foo"))
-  ;; [     5.59 26.48 45.82     ] ; 1st gen (macro form)
-  ;; [     3.31 13.48 36.22     ] ; 2nd gen (fn form)
-  ;; [0.82 1.75  7.57 27.05     ] ; 3rd gen (lean macro form)
-  ;; [0.4  0.47  1.3  1.77  1.53] ; 4th gen (macro preds)
 
-  (enc/qb 1e4
+  (enc/qb 1e6 ; [75.73 75.88]
     (have  string? :in ["foo" "bar" "baz"])
     (have? string? :in ["foo" "bar" "baz"]))
 
   (macroexpand '(have string? 5))
   (macroexpand '(have string? 5 :data "foo"))
-  (macroexpand '(have string? 5 :data (enc/get-env)))
-  (let [x :x]   (have string? 5 :data (enc/get-env)))
+  (macroexpand '(have string? 5 :data (enc/get-locals)))
+  (let [x :x]   (have string? 5 :data (enc/get-locals)))
 
   (have string? 5)
   (have string? 5 :data {:a "a"})
@@ -125,7 +140,7 @@
 
   ((fn [x]
      (let [a "a" b "b"]
-       (have string? x :data {:env (enc/get-env)}))) 5)
+       (have string? x :data {:env (enc/get-locals)}))) 5)
 
   (do
     (set! *assert* false)
@@ -148,29 +163,6 @@
   (have  integer? :in #{1 2 3} [4 5 6] #{7 8 9} s1))
 
 ;;;; Utils
-
-#?(:clj
-   (defmacro keep-callsite
-     "CLJ-865 unfortunately means that it's currently not possible
-     for an inner macro to access the &form metadata of an outer macro.
-
-     This means that inner macros lose call site information like the
-     line number of the outer macro.
-
-     This util offers a workaround for macro authors:
-
-       (defmacro my-macro1 [x]                `(truss/have ~x))  ; W/o  call site info
-       (defmacro my-macro2 [x] (keep-callsite `(truss/have ~x))) ; With call site info"
-
-     {:added "v1.8.0 (2022-12-13)"}
-     [& body] `(with-meta (do ~@body) (meta ~'&form))))
-
-(comment
-  (defmacro my-macro1 [x]                `(have ~x))
-  (defmacro my-macro2 [x] (keep-callsite `(have ~x)))
-
-  (my-macro1 nil)
-  (my-macro2 nil))
 
 (defn get-data
   "Returns current value of dynamic assertion data."
@@ -197,13 +189,13 @@
 
 ;;;; Deprecated
 
-(defn get-dynamic-assertion-data
+(defn ^:no-doc get-dynamic-assertion-data
   {:deprecated "v1.7.0 (2022-11-16)"
    :doc "Prefer `get-data`"}
   [] impl/*data*)
 
 #?(:clj
-   (defmacro with-dynamic-assertion-data
+   (defmacro ^:no-doc with-dynamic-assertion-data
      {:deprecated "v1.7.0 (2022-11-16)"
       :doc "Prefer `with-data`"}
      [data & body] `(binding [impl/*data* ~data] ~@body)))

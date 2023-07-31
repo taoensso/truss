@@ -63,6 +63,9 @@ See for  intro and usage:
 ;;   :line 9,
 ;;   :column 11,
 ;;   :file "examples.cljc"}}
+
+;; Assert inside collections using `:in`:
+(have string? :in ["don't" "panic"])
 ```
 
 That's everything most users will need to know, but see the [documentation](#documentation) below for more!

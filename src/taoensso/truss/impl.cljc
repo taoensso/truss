@@ -16,20 +16,17 @@
 ;;   - Allows Encore to depend on Truss (esp. nb for back-compatibility wrappers).
 ;;   - Allows Truss to be entirely dependency free.
 
-#?(:clj (defmacro if-cljs [then else] (if (:ns &env) then else)))
 #?(:clj
    (defmacro catching
-     "Cross-platform try/catch/finally."
-     ;; Very unfortunate that CLJ-1293 has not yet been addressed
      ([try-expr                     ] `(catching ~try-expr ~'_ nil))
      ([try-expr error-sym catch-expr]
-      `(if-cljs
-         (try ~try-expr (catch js/Error  ~error-sym ~catch-expr))
-         (try ~try-expr (catch Throwable ~error-sym ~catch-expr))))
+      (if (:ns &env)
+        `(try ~try-expr (catch js/Error  ~error-sym ~catch-expr))
+        `(try ~try-expr (catch Throwable ~error-sym ~catch-expr))))
      ([try-expr error-sym catch-expr finally-expr]
-      `(if-cljs
-         (try ~try-expr (catch js/Error  ~error-sym ~catch-expr) (finally ~finally-expr))
-         (try ~try-expr (catch Throwable ~error-sym ~catch-expr) (finally ~finally-expr))))))
+      (if (:ns &env)
+        `(try ~try-expr (catch js/Error  ~error-sym ~catch-expr) (finally ~finally-expr))
+        `(try ~try-expr (catch Throwable ~error-sym ~catch-expr) (finally ~finally-expr))))))
 
 (defn rsome   [pred coll]       (reduce (fn [acc in] (when-let [p (pred in)] (reduced p))) nil coll))
 (defn revery? [pred coll]       (reduce (fn [acc in] (if (pred in) true (reduced nil))) true coll))
@@ -45,15 +42,15 @@
   (defn #?(:clj ks-nnil? :cljs ^boolean ks-nnil?) [ks m] (revery?     #(some? (get m %))           ks)))
 
 #?(:clj
-   (defn get-source [form env]
-     (let [{:keys [line column file]} (meta form)
+   (defn get-source [macro-form macro-env]
+     (let [{:keys [line column file]} (meta macro-form)
            file
-           (if-not (:ns env)
-             *file* ; Compiling clj
-             (or    ; Compiling cljs
-               (when-let [url (and file (try (io/resource file) (catch Throwable _ nil)))]
-                 (try (.getPath (io/file url)) (catch Throwable _ nil))
-                 (do            (str     url)))
+           (if-not (:ns macro-env)
+             *file* ; Compiling Clj
+             (or    ; Compiling Cljs
+               (when-let [url (and file (catching (io/resource file)))]
+                 (catching (.getPath (io/file url)))
+                 (do                 (str     url)))
                file))]
 
        {:ns     (str *ns*)
@@ -67,30 +64,31 @@
 (comment (io/resource "taoensso/truss.cljc"))
 
 #?(:clj
-   (let [resolve-clj clojure.core/resolve
-         resolve-cljs
-         (when-let [ns (find-ns 'cljs.analyzer.api)]
-           (when-let [v (ns-resolve ns 'resolve)] @v))]
+   (defn- var-info
+     "Returns ?{:keys [var meta ns name ...]} for given symbol."
+     [macro-env sym]
+     (when (symbol? sym)
+       (if (:ns macro-env)
+         (let [ns (find-ns 'cljs.analyzer.api)
+               v  (ns-resolve ns 'resolve)] ; Don't cache!
+           (@v macro-env sym)) ; ?{:keys [meta ns name ...]}
 
-     (defn resolve-var
-       #?(:clj ([sym] (resolve-clj sym)))
-       ([env sym]
-        (when (symbol? sym)
-          (if (:ns env)
-            (when resolve-cljs (resolve-cljs env sym))
-            (do                (resolve-clj  env sym))))))))
+         (when-let [v (resolve macro-env sym)]
+           (let [m (meta v)]
+             {:var v
+              :meta
+              (if-let [x (get m :arglists)]
+                (assoc m :arglists `'~x) ; Quote
+                (do    m))
 
-(comment (resolve-var nil 'string?))
+              :ns   (get m :ns)
+              :name (get m :name)}))))))
 
 #?(:clj
-   (defn- var->sym [cljs? v]
-     (let [m (if cljs? v (meta v))]
-       (symbol (str (:ns m)) (name (:name m))))))
-
-#?(:clj
-   (defn resolve-sym
-     #?(:clj ([sym] (when-let [v (resolve-var     sym)] (var->sym false     v))))
-     ([env sym]     (when-let [v (resolve-var env sym)] (var->sym (:ns env) v)))))
+   (defn resolve-sym [macro-env sym]
+     (when (symbol? sym)
+       (when-let [{var-ns :ns, var-name :name} (var-info macro-env sym)]
+         (symbol (str var-ns) (name var-name))))))
 
 (comment (resolve-sym nil 'string?))
 
@@ -118,12 +116,12 @@
 #?(:clj
    (defn- safe-pred-form?
      "Returns true for common preds that can't throw."
-     [env pred-form]
+     [macro-env pred-form]
      (or
        (keyword? pred-form)
        (map?     pred-form)
        (set?     pred-form)
-       (when-let [rsym (resolve-sym env pred-form)]
+       (when-let [rsym (resolve-sym macro-env pred-form)]
          (contains? safe-pred-forms rsym)))))
 
 (comment (safe-pred-form? nil 'nil?))
@@ -131,21 +129,22 @@
 #?(:clj
    (defn parse-pred-form
      "Returns {:keys [pred rsym safe?]}"
-     [env pred-form]
+     [macro-env pred-form]
      (cond
-       (= pred-form ::some?) (parse-pred-form env `some?)
+       (= pred-form ::some?) (parse-pred-form macro-env `some?)
        (not (vector? pred-form))
-       {:pred-form                  pred-form
-        :rsym  (resolve-sym     env pred-form)
-        :safe? (safe-pred-form? env pred-form)}
+       {:pred-form                        pred-form
+        :rsym  (resolve-sym     macro-env pred-form)
+        :safe? (safe-pred-form? macro-env pred-form)}
 
        :else
        (let [[type a1 a2 a3]      pred-form
              num-args (dec (count pred-form))]
 
          (when (or (< num-args 1) (> num-args 3))
-           (throw (ex-info "Truss special predicates should have 1≤n≤3"
-                    {:pred-form pred-form})))
+           (throw
+             (ex-info "Truss special predicates should have 1≤n≤3"
+               {:pred-form pred-form})))
 
          (case type
            :set=             {:pred-form `(fn [~'x] (=             (ensure-set ~'x) (ensure-set ~a1)))}
@@ -168,9 +167,9 @@
 
            (:and :or :not) ; Composition
            (let [;;; Support recursive expansion
-                 {a1 :pred-form, sf-a1? :safe?} (when a1 (parse-pred-form env a1))
-                 {a2 :pred-form, sf-a2? :safe?} (when a2 (parse-pred-form env a2))
-                 {a3 :pred-form, sf-a3? :safe?} (when a3 (parse-pred-form env a3))
+                 {a1 :pred-form, sf-a1? :safe?} (when a1 (parse-pred-form macro-env a1))
+                 {a2 :pred-form, sf-a2? :safe?} (when a2 (parse-pred-form macro-env a2))
+                 {a3 :pred-form, sf-a3? :safe?} (when a3 (parse-pred-form macro-env a3))
 
                  sf-a1    (when a1 (if sf-a1? a1 `(safe-pred ~a1)))
                  sf-a2    (when a2 (if sf-a2? a2 `(safe-pred ~a2)))
@@ -212,16 +211,6 @@
    (parse-pred-form nil [:and 'string? 'seq])
    (parse-pred-form nil [:and 'integer? [:and 'number? 'pos? 'int?]])])
 
-;; #?(:clj
-;;    (defn- fast-pr-str
-;;      "Combination `with-out-str`, `pr`. Ignores *print-dup*."
-;;      [x]
-;;      (let [w (java.io.StringWriter.)]
-;;        (print-method x w)
-;;        (.toString      w))))
-
-;; (comment (enc/qb 1e5 (pr-str {:a :A}) (fast-pr-str {:a :A})))
-
 (defn- error-message
   ;; Temporary, to support Clojure 1.9
   ;; Clojure 1.10+ now has `ex-message`
@@ -242,16 +231,6 @@
             arg-val     (if undefn-arg? 'truss/undefined-arg       arg)
             arg-type    (if undefn-arg? 'truss/undefined-arg (type arg))
 
-            ;; arg-str
-            ;; (cond
-            ;;   undefn-arg? "<truss/undefined-arg>"
-            ;;   (nil? arg)  "<truss/nil>"
-            ;;   :else
-            ;;   (binding [*print-readably* false
-            ;;             *print-length*   3]
-            ;;     #?(:clj  (fast-pr-str arg)
-            ;;        :cljs (pr-str      arg))))
-
             ?err
             (cond
               (identical? -dummy-error ?err) nil
@@ -261,7 +240,7 @@
 
             msg_
             (delay
-              (let [;arg-form (if (nil? arg-form) 'nil arg-form)
+              (let [; arg-form (if (nil? arg-form) 'nil arg-form)
                     msg
                     (str "Invariant failed at " ns-sym
                       (when ?line (str "[" ?line (when ?column (str "," ?column)) "]")) ": "

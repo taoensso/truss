@@ -16,20 +16,17 @@
 ;;   - Allows Encore to depend on Truss (esp. nb for back-compatibility wrappers).
 ;;   - Allows Truss to be entirely dependency free.
 
-#?(:clj (defmacro if-cljs [then else] (if (:ns &env) then else)))
 #?(:clj
    (defmacro catching
-     "Cross-platform try/catch/finally."
-     ;; Very unfortunate that CLJ-1293 has not yet been addressed
      ([try-expr                     ] `(catching ~try-expr ~'_ nil))
      ([try-expr error-sym catch-expr]
-      `(if-cljs
-         (try ~try-expr (catch js/Error  ~error-sym ~catch-expr))
-         (try ~try-expr (catch Throwable ~error-sym ~catch-expr))))
+      (if (:ns &env)
+        `(try ~try-expr (catch js/Error  ~error-sym ~catch-expr))
+        `(try ~try-expr (catch Throwable ~error-sym ~catch-expr))))
      ([try-expr error-sym catch-expr finally-expr]
-      `(if-cljs
-         (try ~try-expr (catch js/Error  ~error-sym ~catch-expr) (finally ~finally-expr))
-         (try ~try-expr (catch Throwable ~error-sym ~catch-expr) (finally ~finally-expr))))))
+      (if (:ns &env)
+        `(try ~try-expr (catch js/Error  ~error-sym ~catch-expr) (finally ~finally-expr))
+        `(try ~try-expr (catch Throwable ~error-sym ~catch-expr) (finally ~finally-expr))))))
 
 (defn rsome   [pred coll]       (reduce (fn [acc in] (when-let [p (pred in)] (reduced p))) nil coll))
 (defn revery? [pred coll]       (reduce (fn [acc in] (if (pred in) true (reduced nil))) true coll))
@@ -72,13 +69,11 @@
          (when-let [ns (find-ns 'cljs.analyzer.api)]
            (when-let [v (ns-resolve ns 'resolve)] @v))]
 
-     (defn resolve-var
-       #?(:clj ([sym] (resolve-clj sym)))
-       ([env sym]
-        (when (symbol? sym)
-          (if (:ns env)
-            (when resolve-cljs (resolve-cljs env sym))
-            (do                (resolve-clj  env sym))))))))
+     (defn resolve-var [env sym]
+       (when (symbol? sym)
+         (if (:ns env)
+           (when resolve-cljs (resolve-cljs env sym))
+           (do                (resolve-clj  env sym)))))))
 
 (comment (resolve-var nil 'string?))
 
@@ -87,10 +82,7 @@
      (let [m (if cljs? v (meta v))]
        (symbol (str (:ns m)) (name (:name m))))))
 
-#?(:clj
-   (defn resolve-sym
-     #?(:clj ([sym] (when-let [v (resolve-var     sym)] (var->sym false     v))))
-     ([env sym]     (when-let [v (resolve-var env sym)] (var->sym (:ns env) v)))))
+#?(:clj (defn resolve-sym [env sym] (when-let [v (resolve-var env sym)] (var->sym (:ns env) v))))
 
 (comment (resolve-sym nil 'string?))
 

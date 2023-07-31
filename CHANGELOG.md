@@ -1,5 +1,21 @@
 This project uses Break Versioning (https://www.taoensso.com/break-versioning)
 
+## `1.11.0` (2023-07-31)
+
+> 📦 [Available on Clojars](https://clojars.org/com.taoensso/truss/versions/1.11.0)
+
+This is a **maintenance + feature release**, and should be a non-breaking upgrade.
+
+### New since `1.10.1`
+
+* f42b81b [mod] Improve invariant violation output
+* 02c027e [new] Add `cljdoc.edn` config (improve cljdoc output)
+
+### Other improvements since `1.10.1`
+
+* 9ff9d55 [nop] More reliable predicate parsing
+
+
 ## `1.10.1` (2023-07-15)
 
 > 📦 [Available on Clojars](https://clojars.org/com.taoensso/truss/versions/1.10.1)

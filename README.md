@@ -13,7 +13,7 @@
 
 ## Latest release/s
 
-- `2023-07-15` `1.10.1`: [changes](../../releases/tag/v1.10.1)
+- `2023-07-31` `1.11.0`: [changes](../../releases/tag/v1.11.0)
 
 [![Main tests][Main tests SVG]][Main tests URL]
 [![Graal tests][Graal tests SVG]][Graal tests URL]

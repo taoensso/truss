@@ -25,7 +25,7 @@
      trapping errors. If any pred test fails, throws a detailed assertion error.
      Otherwise returns input val/vals for convenient inline-use/binding.
 
-     Respects *assert* value so tests can be elided from production for zero
+     Respects `*assert*` value so tests can be elided from production for zero
      runtime costs.
 
      Provides a small, simple, flexible feature subset to alternative tools like
@@ -64,8 +64,8 @@
 
 #?(:clj
    (defmacro have!
-     "Like `have` but ignores *assert* value (so can never be elided). Useful
-     for important conditions in production (e.g. security checks)."
+     "Like `have` but ignores `*assert*` value (so can never be elided).
+     Useful for important conditions in production (e.g. security checks)."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
      (let [[&form args] (clj-865-workaround &form args)
@@ -79,7 +79,7 @@
      when the return vals aren't necessary.
 
      **WARNING**: Do NOT use in :pre/:post conds since those are ALWAYS subject
-     to *assert*, directly contradicting the intention of the bang (`!`) here."
+     to `*assert*`, directly contradicting the intention of the bang (`!`) here."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}
      [& args]
      (let [[&form args] (clj-865-workaround &form args)
@@ -116,8 +116,8 @@
 
   (macroexpand '(have string? 5))
   (macroexpand '(have string? 5 :data "foo"))
-  (macroexpand '(have string? 5 :data (enc/get-env)))
-  (let [x :x]   (have string? 5 :data (enc/get-env)))
+  (macroexpand '(have string? 5 :data (enc/get-locals)))
+  (let [x :x]   (have string? 5 :data (enc/get-locals)))
 
   (have string? 5)
   (have string? 5 :data {:a "a"})
@@ -125,7 +125,7 @@
 
   ((fn [x]
      (let [a "a" b "b"]
-       (have string? x :data {:env (enc/get-env)}))) 5)
+       (have string? x :data {:env (enc/get-locals)}))) 5)
 
   (do
     (set! *assert* false)

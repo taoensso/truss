@@ -46,7 +46,7 @@ This is a minor **feature release**, and should be a non-breaking upgrade.
 ```
 
 > This is a **feature release**. Should be non-breaking.
-> See [here](https://github.com/ptaoussanis/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
+> See [here](https://github.com/taoensso/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
 
 ### Since `1.8.0`
 
@@ -62,7 +62,7 @@ This is a minor **feature release**, and should be a non-breaking upgrade.
 ```
 
 > This is a **maintenance release**. _Should_ be non-breaking.
-> See [here](https://github.com/ptaoussanis/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
+> See [here](https://github.com/taoensso/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
 
 ### Since `v1.7.2`
 
@@ -77,7 +77,7 @@ This is a minor **feature release**, and should be a non-breaking upgrade.
 ```
 
 > This is a **maintenance release**. Changes may be BREAKING for some users, see relevant commits referenced below for details.  
-> See [here](https://github.com/ptaoussanis/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
+> See [here](https://github.com/taoensso/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
 
 ### Changes since `v1.6.0`
 
@@ -94,7 +94,7 @@ This is a minor **feature release**, and should be a non-breaking upgrade.
 ```
 
 > Minor feature release. _Should_ be non-breaking.
-> See [here](https://github.com/ptaoussanis/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
+> See [here](https://github.com/taoensso/encore#recommended-steps-after-any-significant-dependency-update) for a tip re: general recommended steps when updating any Clojure/Script dependencies.
 
 Identical to `1.6.0-RC1`.
 

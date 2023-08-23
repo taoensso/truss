@@ -64,27 +64,31 @@
 (comment (io/resource "taoensso/truss.cljc"))
 
 #?(:clj
-   (let [resolve-clj clojure.core/resolve
-         resolve-cljs
+   (let [resolve-clj clojure.core/resolve ; Returns Var
+         resolve-cljs ; Returns analysis map
          (when-let [ns (find-ns 'cljs.analyzer.api)]
-           (when-let [v (ns-resolve ns 'resolve)] @v))]
+           (when-let [v (ns-resolve ns 'resolve)] @v))
 
-     (defn resolve-var [env sym]
+         resolve-auto
+         (fn [macro-env sym]
+           (when-let [m
+                      (if (:ns macro-env)
+                        (when resolve-cljs (catching (resolve-cljs macro-env sym)))
+                        (do                    (meta (resolve-clj  macro-env sym))))]
+             (symbol (str (:ns m)) (name (:name m)))))]
+
+     (defn resolve-sym
+       [macro-env sym may-require-ns?]
        (when (symbol? sym)
-         (if (:ns env)
-           (when resolve-cljs (resolve-cljs env sym))
-           (do                (resolve-clj  env sym)))))))
+         (if-not may-require-ns?
+           (resolve-auto macro-env sym)
+           (or
+             (resolve-auto macro-env sym)
+             (when-let [ns (namespace sym)]
+               (when (catching (do (require (symbol ns)) true))
+                 (resolve-auto macro-env sym)))))))))
 
-(comment (resolve-var nil 'string?))
-
-#?(:clj
-   (defn- var->sym [cljs? v]
-     (let [m (if cljs? v (meta v))]
-       (symbol (str (:ns m)) (name (:name m))))))
-
-#?(:clj (defn resolve-sym [env sym] (when-let [v (resolve-var env sym)] (var->sym (:ns env) v))))
-
-(comment (resolve-sym nil 'string?))
+(comment (resolve-sym nil 'string? false))
 
 ;;;; Truss
 
@@ -115,7 +119,7 @@
        (keyword? pred-form)
        (map?     pred-form)
        (set?     pred-form)
-       (when-let [rsym (resolve-sym env pred-form)]
+       (when-let [rsym (resolve-sym env pred-form false)]
          (contains? safe-pred-forms rsym)))))
 
 (comment (safe-pred-form? nil 'nil?))
@@ -128,7 +132,7 @@
        (= pred-form ::some?) (parse-pred-form env `some?)
        (not (vector? pred-form))
        {:pred-form                  pred-form
-        :rsym  (resolve-sym     env pred-form)
+        :rsym  (resolve-sym     env pred-form true)
         :safe? (safe-pred-form? env pred-form)}
 
        :else

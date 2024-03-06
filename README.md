@@ -62,7 +62,7 @@ See for  intro and usage:
 ;;  {:ns truss-examples,
 ;;   :line 9,
 ;;   :column 11,
-;;   :file "examples/truss_examples.cljc"}}
+;;   :file "examples.cljc"}}
 ```
 
 That's everything most users will need to know, but see the [documentation](#documentation) below for more!

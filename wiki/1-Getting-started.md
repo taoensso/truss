@@ -70,7 +70,7 @@ What varies is the return value, and whether elision is possible.
 
 # Examples
 
-> All examples are from [`/examples/truss_examples.cljc`](../blob/master/examples/truss_examples.cljc)
+> All examples are from [`/examples.cljc`](../blob/master/examples.cljc)
 
 Truss's sweet spot is often in longer, complex code (difficult to show here). So these examples are mostly examples of **syntax**, not **use case**. In particular, they mostly focus on simple **argument type assertions** since those are the easiest to understand.
 
@@ -99,7 +99,7 @@ A Truss `(have <pred> <arg>)` form will either throw or return the given argumen
 ;;  {:ns truss-examples,
 ;;   :line 41,
 ;;   :column 1,
-;;   :file "examples/truss_examples.cljc"}}
+;;   :file "examples.cljc"}}
 
 ;; Truss also automatically traps and handles exceptions
 (have string? (/ 1 0)) ; =>
@@ -117,7 +117,7 @@ A Truss `(have <pred> <arg>)` form will either throw or return the given argumen
 ;;  {:ns truss-examples,
 ;;   :line 54,
 ;;   :column 1,
-;;   :file "examples/truss_examples.cljc"},
+;;   :file "examples.cljc"},
 ;;  :err
 ;;  #error
 ;;  {:cause "Divide by zero"
@@ -148,7 +148,7 @@ A Truss `(have <pred> <arg>)` form will either throw or return the given argumen
 ;;  {:ns truss-examples,
 ;;   :line 89,
 ;;   :column 15,
-;;   :file "examples/truss_examples.cljc"}}
+;;   :file "examples.cljc"}}
 ```
 
 ## Attaching debug data
@@ -170,7 +170,7 @@ You can attach arbitrary debug data to be displayed on violations:
 ;;  {:ns truss-examples,
 ;;   :line 107,
 ;;   :column 15,
-;;   :file "examples/truss_examples.cljc"},
+;;   :file "examples.cljc"},
 ;;  :data {:dynamic nil, :arg {:ring-req {:foo :bar}}}}
 ```
 
@@ -208,7 +208,7 @@ And you can attach shared debug data at the `binding` level:
 ;;  {:ns truss-examples,
 ;;   :line 136,
 ;;   :column 3,
-;;   :file "examples/truss_examples.cljc"},
+;;   :file "examples.cljc"},
 ;;  :data {:dynamic {:ring-session {:user-name "Stu"}}, :arg nil}}
 ```
 

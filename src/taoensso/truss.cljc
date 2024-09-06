@@ -34,6 +34,9 @@
        ;; Will throw a detailed error message on invariant violation:
        (fn my-fn [x] (str/trim (have string? x)))
 
+     To assert inside a collection, use `:in`:
+       `(have string? :in [\"foo\" \"bar\"])`
+
      You may attach arbitrary debug info to assertion violations like:
        `(have string? x :data {:my-arbitrary-debug-info \"foo\"})`
 

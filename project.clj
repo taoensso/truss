@@ -37,7 +37,7 @@
 
     :dependencies
     [[org.clojure/test.check    "1.1.1"]
-     [com.taoensso/encore       "3.118.0"
+     [com.taoensso/encore       "3.134.0"
       :exclusions [com.taoensso/truss]]]
 
     :plugins

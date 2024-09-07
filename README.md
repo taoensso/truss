@@ -73,7 +73,7 @@ That's everything most users will need to know, but see the [documentation](#doc
 ## Documentation
 
 - [Wiki][GitHub wiki] (getting started, usage, etc.)
-- API reference: [cljdoc][cljdoc docs], [Codox][Codox docs]][cljdoc docs]
+- API reference: [cljdoc][cljdoc docs] or [Codox][Codox docs]
 
 ## Funding
 

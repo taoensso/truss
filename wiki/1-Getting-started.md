@@ -295,8 +295,9 @@ No need for any special syntax or concepts, just define a function as you'd like
 
 # Motivation
 
-<a href="https://youtu.be/gMB4Y-EIArA" title="Truss talk (YouTube)"><img src="https://raw.githubusercontent.com/ptaoussanis/truss/master/talk.jpg" width="600"/></a>
-
+<p><a href="https://www.youtube.com/watch?v=gMB4Y-EIArA" target="_blank">
+ <img src="https://img.youtube.com/vi/gMB4Y-EIArA/maxresdefault.jpg" alt="Truss demo video" width="480" border="0" /></a></p>
+ 
 Clojure is a beautiful language full of smart trade-offs that tends to produce production code that's short, simple, and easy to understand.
 
 But every language necessarily has trade-offs. In the case of Clojure, **dynamic typing** leads to one of the more common challenges that I've observed in the wild: **debugging or refactoring large codebases**.

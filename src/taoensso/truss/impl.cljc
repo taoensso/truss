@@ -2,7 +2,7 @@
   "Private implementation details."
   (:require
    [clojure.set :as set]
-   #?(:clj [clojure.java.io :as io]))
+   #?(:clj [clojure.java.io :as jio]))
   #?(:cljs (:require-macros [taoensso.truss.impl :refer [catching]])))
 
 (comment (require '[taoensso.encore :as enc]))
@@ -42,26 +42,27 @@
   (defn #?(:clj ks-nnil? :cljs ^boolean ks-nnil?) [ks m] (revery?     #(some? (get m %))           ks)))
 
 #?(:clj
-   (defn get-source [macro-form macro-env]
+   (defn get-source "From Encore" [macro-form macro-env]
      (let [{:keys [line column file]} (meta macro-form)
            file
            (if-not (:ns macro-env)
              *file* ; Compiling Clj
              (or    ; Compiling Cljs
-               (when-let [url (and file (catching (io/resource file)))]
-                 (catching (.getPath (io/file url)))
-                 (do                 (str     url)))
-               file))]
+               (when-let [url (and file (try (jio/resource file) (catch Exception _)))]
+                 (try (.getPath (jio/file url)) (catch Exception _))
+                 (do            (str      url)))
+               file))
 
-       {:ns     (str *ns*)
-        :line   line
-        :column column
-        :file
-        (when (string? file)
-          (when-not (contains? #{"NO_SOURCE_PATH" "NO_SOURCE_FILE" ""} file)
-            file))})))
+           file
+           (when (string? file)
+             (when-not (contains? #{"NO_SOURCE_PATH" "NO_SOURCE_FILE" ""} file)
+               file))
 
-(comment (io/resource "taoensso/truss.cljc"))
+           m {:ns (str *ns*)}
+           m (if line   (assoc m :line   line)   m)
+           m (if column (assoc m :column column) m)
+           m (if file   (assoc m :file   file)   m)]
+       m)))
 
 #?(:clj
    (defn- var-info

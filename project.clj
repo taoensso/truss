@@ -1,4 +1,4 @@
-(defproject com.taoensso/truss "1.11.0"
+(defproject com.taoensso/truss "1.12.0"
   :author "Peter Taoussanis <https://www.taoensso.com>"
   :description "Assertions micro-library for Clojure/Script"
   :url "https://www.taoensso.com/truss"

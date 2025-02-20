@@ -1,5 +1,5 @@
 <a href="https://www.taoensso.com/clojure" title="More stuff by @ptaoussanis at www.taoensso.com"><img src="https://www.taoensso.com/open-source.png" alt="Taoensso open source" width="340"/></a>  
-[**Documentation**](#documentation) | [Latest releases](#latest-releases) | [Get support][GitHub issues]
+[**API**][cljdoc] | [**Wiki**][GitHub wiki] | [Latest releases](#latest-releases) | [Slack channel][]
 
 # Truss
 
@@ -73,7 +73,8 @@ That's everything most users will need to know, but see the [documentation](#doc
 ## Documentation
 
 - [Wiki][GitHub wiki] (getting started, usage, etc.)
-- API reference: [cljdoc][cljdoc docs] or [Codox][Codox docs]
+- API reference via [cljdoc][cljdoc]
+- Support via [Slack channel][] or [GitHub issues][]
 
 ## Funding
 
@@ -89,14 +90,14 @@ Licensed under [EPL 1.0](LICENSE.txt) (same as Clojure).
 [GitHub releases]: ../../releases
 [GitHub issues]:   ../../issues
 [GitHub wiki]:     ../../wiki
+[Slack channel]: https://www.taoensso.com/truss/slack
 
 [Peter Taoussanis]: https://www.taoensso.com
 [sponsor]:          https://www.taoensso.com/sponsor
 
 <!-- Project -->
 
-[Codox docs]:   https://taoensso.github.io/truss/
-[cljdoc docs]: https://cljdoc.org/d/com.taoensso/truss/
+[cljdoc]: https://cljdoc.org/d/com.taoensso/truss/
 
 [Clojars SVG]: https://img.shields.io/clojars/v/com.taoensso/truss.svg
 [Clojars URL]: https://clojars.org/com.taoensso/truss

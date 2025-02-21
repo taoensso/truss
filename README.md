@@ -3,72 +3,136 @@
 
 # Truss
 
-### Assertions micro-library for Clojure/Script
+### An opinionated micro toolkit for Clojure/Script errors
 
-**Truss** is a tiny Clojure/Script library that provides fast and flexible **runtime assertions** with **terrific error messages**. Use it as a complement or alternative to [clojure.spec](https://clojure.org/about/spec), [core.typed](https://github.com/clojure/core.typed), etc.
+**Truss** is a lightweight, dependency-free library for Clojure and ClojureScript that offers a small set of high-value utils and patterns that I've honed over the years to help tame Clojure's (often impenetrable) error messages.
 
-<img width="600" src="../../blob/master/hero.png" alt="Egyptian ship with rope truss, the oldest known use of trusses (about 1250 BC)."/>
+It works great with [Telemere](https://www.taoensso.com/telemere) and [Tufte](https://www.taoensso.com/tufte) and includes practical tools for [inline assertions](#inline-assertions), [contextual exceptions](#contextual-exceptions), [cross-platform exceptions](cross-platform-exceptions), [testing exceptions](#testing-exceptions), and [more](#misc-utils).
+
+<img width="640" src="../../blob/master/hero.png" alt="Egyptian ship with rope truss, the oldest known use of trusses (about 1250 BC)."/>
 
 > A doubtful friend is worse than a certain enemy. Let a man be one thing or the other, and we then know how to meet him. - Aesop
 
 ## Latest release/s
 
-- `2024-09-07` `1.12.0`: [release info](../../releases/tag/v1.12.0)
+- `2025-02-21` `v2.0.0-SNAPSHOT`: work in progress
+- `2024-09-07` `v1.12.0`: [release info](../../releases/tag/v1.12.0)
+
+> (v2 expands Truss's scope from just inline assertions to a general micro toolkit for Clojure/Script errors).
 
 [![Main tests][Main tests SVG]][Main tests URL]
 [![Graal tests][Graal tests SVG]][Graal tests URL]
 
 See [here][GitHub releases] for earlier releases.
 
-## Why Truss?
+## Inline assertions
 
-- **Tiny** cross-platform Clj/s codebase with **zero dependencies**
-- **Trivially easy** to learn, use, and understand
-- **Terrific error messages** for quick+easy debugging
-- **Terrific performance**: miniscule (!) runtime cost
-- Easy **elision** for *zero* runtime cost
-- No commitment or costly buy-in: use it just when+where needed
-- Perfect for library authors: no bulky dependencies
+Truss offers 4x small macros that provide super efficient and flexible **runtime assertions** with **terrific error messages** when something goes wrong.
 
-## Video demo
-
-See for  intro and usage:
-
-<a href="https://www.youtube.com/watch?v=gMB4Y-EIArA" target="_blank">
- <img src="https://img.youtube.com/vi/gMB4Y-EIArA/maxresdefault.jpg" alt="Truss demo video" width="480" border="0" />
-</a>
-
-## Quick example
+The main macro is [`have`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have), which is basically syntactic sugar for:
 
 ```clojure
-(require '[taoensso.truss :as truss :refer [have have?]])
-
-;; Truss uses the simple `(predicate arg)` pattern familiar to Clojure users:
-(defn square [n]
-  (let [n (have integer? n)] ; <- A Truss assertion
-    (* n n)))
-
-;; This assertion basically expands to:
-;; (if (integer? n) n (throw-detailed-assertion-error!))
-
-(square 5)   ; => 25
-(square nil) ; =>
-;; Invariant failed at truss-examples[9,11]: (integer? n)
-;; {:dt #inst "2023-07-31T09:56:10.295-00:00",
-;;  :pred clojure.core/integer?,
-;;  :arg {:form n, :value nil, :type nil},
-;;  :env {:elidable? true, :*assert* true},
-;;  :loc
-;;  {:ns truss-examples,
-;;   :line 9,
-;;   :column 11,
-;;   :file "examples.cljc"}}
-
-;; Assert inside collections using `:in`:
-(have string? :in ["don't" "panic"])
+(if (given-predicate given-arg)
+  given-arg ; Returns arg on success
+  (throw-detailed-exception!))
 ```
 
-That's everything most users will need to know, but see the [documentation](#documentation) below for more!
+A few well-placed inline assertions can go a surprisingly long way to making unexpected errors in production easier to identify and understand.
+
+When a Truss assertion fails, it'll throw a [`truss/ex-info`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#ex-info) with ex-data that includes a timestamp, the failed predicate, the tested argument, the source location, and the current Truss context ([`*ctx*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#*ctx*)).
+
+I can't overstate how much difference having this basic info can make.
+
+Examples:
+
+```clojure
+(have string? "foo") ; => "foo"
+(have string? 5)     ; => Throws detailed exception
+
+;; Multiple args can be given:
+(have string? "foo" "bar") ; => ["foo" "bar"]
+(have string? "foo" 5)     ; => Throws detailed exception
+
+;; Omit predicate to default to `some?` (non-nil):
+(have "foo") ; => "foo"
+(have false) ; => false
+(have nil)   ; => Throws detailed exception
+
+;; Add arb optional info to thrown ex-data using `:data`:
+(have string? "foo" :data {:user-id 101}) => "foo"
+
+;; Assert inside collections using `:in`:
+(have string? :in #{"foo" "bar"}) ; => #{"foo" "bar"}
+
+;; Several special predicates are supported:
+(have [:or nil? string?] "foo") ; => "foo"
+
+;; An example exception:
+(have string? (/ 1 0)) ; =>
+;; Truss assertion failed at truss-examples[29 1]:
+;; (clojure.core/string? (/ 1 0))
+;; Error evaluating arg: Divide by zero
+;; {:inst #inst "2025-02-21T14:19:36.798972000-00:00",
+;;  :ns "truss-examples",
+;;  :pred clojure.core/string?,
+;;  :arg
+;;  {:form (/ 1 0), :value :truss/exception, :type :truss/exception},
+;;  :coords [29 1]}
+```
+
+See [examples.cljc](/blob/master/examples.cljc) or [YouTube demo](https://www.youtube.com/watch?v=gMB4Y-EIArA) for more.
+
+## Contextual exceptions
+
+Exceptions unexpectedly thrown in production can be fiendishly difficult to understand/debug. What argument was bad? Where did it come from?
+
+Truss's [inline assertions](#inline-assertions) (above) provide one solution to the problem of vague exceptions.
+
+Truss's **contextual exception** API provides another. Any time a [`truss/ex-info`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#ex-info) is thrown, it'll include the dynamic [`*ctx*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#*ctx*) value.
+
+You can use [`set-ctx!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#set-ctx!), [`with-ctx`, `with-ctx+`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#with-ctx+) to easily establish relevant information about what your code is doing. Then if something unexpectedly throws, this context info will be included in relevant exceptions.
+
+Example:
+
+```clojure
+(defn wrap-ring-ctx
+  "Wraps given ring handler so that the ring req will be
+  included in any thrown `truss/ex-info`s."
+  [ring-handler-fn]
+  (fn [ring-req]
+    (truss/with-ctx+ {:ring-req ring-req} ; Merge into `truss/*ctx*`
+      (ring-handler-fn ring-req))))
+```
+
+> I'll be updating all my [open source libraries](https://www.taoensso.com/clojure) to use [`truss/ex-info`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#ex-info) everywhere exceptions are thrown.
+
+## Cross-platform exceptions
+
+Catching exceptions in cross-platform Clojure/Script code can be needlessly tedious. Truss provides a couple utils to make this easier:
+
+- [`catching`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching) just swallow exceptions: `(catching (my-code))`.
+- [`try*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#try*) is like `core/try` but can catch special classes: `:ex-info`, `:common`, `:all`, `:default`. See docstring for details.
+
+A cross-platform [`error?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#error?) predicate is also provided.
+
+## Testing exceptions
+
+Writing unit tests that need to check for specific exception types, messages, and/or ex-data? Truss provides some relevant utils: [`throws?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#throws?), [`throws`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#throws), [`matching-error`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#matching-error).
+
+Example:
+
+```clojure
+(is (throws? :any "Divide by zero" (/ 1 0))) => true
+(is (throws? :ex-info {:user-name :stu, :user-id pos-int?} ...))
+```
+
+  When an error with (nested) causes doesn't match, a match will be attempted
+  against its (nested) causes.
+
+## Misc utils
+
+- Clojure's transducers are awesome, but can be an absolute pita to debug. See [`catching-xform`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching-xform) for a util this _far_ easier. [`catching-rf`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching-rf) is likewise available for regular reducing fns.
+- [`unexpected-arg!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#unexpected-arg!) provides an easy (if somewhat verbose) way to reject an argument with a clear error message. I'm increasingly using this in my own [open source libraries](https://www.taoensso.com/clojure) to make common user errors easier to debug.
 
 ## Documentation
 
@@ -82,7 +146,7 @@ You can [help support][sponsor] continued work on this project, thank you!! 🙏
 
 ## License
 
-Copyright &copy; 2014-2024 [Peter Taoussanis][].  
+Copyright &copy; 2014-2025 [Peter Taoussanis][].  
 Licensed under [EPL 1.0](LICENSE.txt) (same as Clojure).
 
 <!-- Common -->

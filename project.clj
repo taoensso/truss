@@ -1,6 +1,6 @@
-(defproject com.taoensso/truss "1.12.0"
+(defproject com.taoensso/truss "2.0.0-SNAPSHOT"
   :author "Peter Taoussanis <https://www.taoensso.com>"
-  :description "Assertions micro-library for Clojure/Script"
+  :description "Micro toolkit for Clojure/Script errors."
   :url "https://www.taoensso.com/truss"
 
   :license
@@ -36,7 +36,7 @@
 
     :dependencies
     [[org.clojure/test.check    "1.1.1"]
-     [com.taoensso/encore       "3.118.0"
+     [com.taoensso/encore       "3.134.0"
       :exclusions [com.taoensso/truss]]]
 
     :plugins

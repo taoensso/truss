@@ -1,191 +1,122 @@
-(ns examples
-  "Some basic Truss usage examples."
-  (:require [taoensso.truss :as truss :refer [have have! have?]]))
+(ns truss-examples
+  "Truss usage examples"
+  (:require
+   [taoensso.truss :as truss
+    :refer [have have! have?]]))
 
 (comment
 
-;;;; First API example
+;;;; Assertions
 
-(defn square [n]
-  (let [n (have integer? n)]
-    (* n n)))
-
-;; This returns n if it satisfies (integer? n), otherwise it throws a clear error:
-;; (have integer? n)
+;; Throw detailed exception on unexpected argument:
+(defn square [n] (let [n (have integer? n)] (* n n)))
 
 (square 5)   ; => 25
 (square nil) ; =>
-;; Invariant failed at truss-examples[9,11]: (integer? n)
-;; {:dt #inst "2023-07-31T09:56:10.295-00:00",
-;;  :pred clojure.core/integer?,
-;;  :arg {:form n, :value nil, :type nil},
-;;  :env {:elidable? true, :*assert* true},
-;;  :loc
-;;  {:ns truss-examples,
-;;   :line 9,
-;;   :column 11,
-;;   :file "examples.cljc"}}
+;; Truss assertion failed at truss-examples[15 11]:
+;; (clojure.core/integer? n)
+;; {:inst   #inst "2025-02-21T14:17:55.143432000-00:00",
+;;  :ns     "truss-examples",
+;;  :pred   clojure.core/integer?,
+;;  :arg    {:form n, :value nil, :type nil},
+;;  :coords [15 11]}
 
-;;;; Inline assertions and bindings
-
-;; You can add an assertion inline
-(println (have string? "foo"))
-
-;; Or you can add an assertion to your bindings
-(let [s (have string? "foo")]
-  (println s))
-
-;; Anything that fails the predicate will throw an error
-(have string? 42) ; =>
-;; Invariant failed at truss-examples[41,1]: (string? 42)
-;; {:dt #inst "2023-07-31T09:58:07.927-00:00",
-;;  :pred clojure.core/string?,
-;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :env {:elidable? true, :*assert* true},
-;;  :loc
-;;  {:ns truss-examples,
-;;   :line 41,
-;;   :column 1,
-;;   :file "examples.cljc"}}
-
-;; Truss also automatically traps and handles exceptions
+;; Truss provides ex-cause info when relevant:
 (have string? (/ 1 0)) ; =>
-;; Invariant failed at truss-examples[54,1]: (string? (/ 1 0))
-;;
+;; Truss assertion failed at truss-examples[29 1]:
+;; (clojure.core/string? (/ 1 0))
 ;; Error evaluating arg: Divide by zero
-;; {:dt #inst "2023-07-31T09:59:06.149-00:00",
+;; {:inst #inst "2025-02-21T14:19:36.798972000-00:00",
+;;  :ns "truss-examples",
 ;;  :pred clojure.core/string?,
 ;;  :arg
-;;  {:form (/ 1 0),
-;;   :value truss/undefined-arg,
-;;   :type truss/undefined-arg},
-;;  :env {:elidable? true, :*assert* true},
-;;  :loc
-;;  {:ns truss-examples,
-;;   :line 54,
-;;   :column 1,
-;;   :file "examples.cljc"},
-;;  :err
-;;  #error
-;;  {:cause "Divide by zero"
-;;   :via
-;;   [{:type java.lang.ArithmeticException
-;;     :message "Divide by zero"
-;;     :at [clojure.lang.Numbers divide "Numbers.java" 190]}]
-;;   :trace
-;;   [<...>]}}
+;;  {:form (/ 1 0), :value :truss/exception, :type :truss/exception},
+;;  :coords [29 1]}
 
-;;;; Destructured bindings
-
-;; You can assert against multipe args at once
-(let [[x y z] (have string? "foo" "bar" "baz")]
-  (str x y z)) ; => "foobarbaz"
-
-;; This won't compromise error message clarity
-(let [[x y z] (have string? "foo" 42 "baz")]
-  (str x y z)) ; =>
-;; Invariant failed at truss-examples[89,15]: (string? 42)
-;; {:dt #inst "2023-07-31T10:01:00.991-00:00",
+;; Assert multipe args at once:
+(let [[x y z] (have string? "foo" "bar" "baz")] (str x y z)) ; => "foobarbaz"
+(let [[x y z] (have string? "foo" 42    "baz")] (str x y z)) ; =>
+;; Truss assertion failed at truss-examples[41 15]:
+;; (clojure.core/string? 42)
+;; {:inst #inst "2025-02-21T15:14:06.216906000-00:00",
+;;  :ns "truss-examples",
 ;;  :pred clojure.core/string?,
 ;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :env {:elidable? true, :*assert* true},
-;;  :loc
-;;  {:ns truss-examples,
-;;   :line 89,
-;;   :column 15,
-;;   :file "examples.cljc"}}
+;;  :coords [41 15]}
 
-;;;; Attaching debug data
+;; Attach arb data to exceptions:
 
-(defn my-handler [ring-req x y]
+(defn my-ring-handler [ring-req x y]
   (let [[x y] (have integer? x y :data {:ring-req ring-req})]
     (* x y)))
 
-(my-handler {:foo :bar} 5 nil) ; =>
-;; Invariant failed at truss-examples[107,15]: (integer? y)
-;; {:dt #inst "2023-07-31T10:02:03.415-00:00",
+(my-ring-handler {:foo :bar} 5 nil) ; =>
+;; Truss assertion failed at truss-examples[52 15]:
+;; (clojure.core/integer? y)
+;; {:inst #inst "2025-02-21T15:15:03.081041000-00:00",
+;;  :ns "truss-examples",
 ;;  :pred clojure.core/integer?,
 ;;  :arg {:form y, :value nil, :type nil},
-;;  :env {:elidable? true, :*assert* true},
-;;  :loc
-;;  {:ns truss-examples,
-;;   :line 107,
-;;   :column 15,
-;;   :file "examples.cljc"},
-;;  :data {:dynamic nil, :arg {:ring-req {:foo :bar}}}}
+;;  :coords [52 15],
+;;  :data {:ring-req {:foo :bar}}}
 
-;;;; Attaching dynamic debug data
+;; Attach arb context to exceptions:
 
-(defn wrap-ring-dynamic-assertion-data
-  "Returns Ring handler wrapped so that assertion violation errors in handler
-  will include `(data-fn <ring-req>)` as debug data."
-  [data-fn ring-handler-fn]
+(defn wrap-ring-ctx
+  "Wraps given Ring handler so that the Ring req will be
+  present in any thrown `truss/ex-info`s."
+  [ring-handler-fn]
   (fn [ring-req]
-    (truss/with-data (data-fn ring-req)
+    (truss/with-ctx    ring-req
       (ring-handler-fn ring-req))))
 
 (defn ring-handler [ring-req]
-  (have? string? 42) ; Will always fail
+  (have? string? 42) ; Always fail
   {:status 200 :body "Done"})
 
-(def wrapped-ring-handler
-  (wrap-ring-dynamic-assertion-data
-    ;; Include Ring session with all handler's assertion errors:
-    (fn data-fn [ring-req] {:ring-session (:session ring-req)})
-    ring-handler))
+(def wrapped-ring-handler (wrap-ring-ctx ring-handler))
 
-(wrapped-ring-handler
-  {:method :get :uri "/" :session {:user-name "Stu"}}) ; =>
-;; Invariant failed at truss-examples[136,3]: (string? 42)
-;; {:dt #inst "2023-07-31T10:02:41.459-00:00",
-;;  :pred clojure.core/string?,
+(wrapped-ring-handler {:method :get :uri "/" :session {:user-id 101}}) ; =>
+;; Truss assertion failed at truss-examples[72 3]:
+;; (#function[clojure.core/string?--5494] 42)
+;; {:inst #inst "2025-02-21T15:19:07.136882000-00:00",
+;;  :ns "truss-examples",
+;;  :pred #function[clojure.core/string?--5494],
 ;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :env {:elidable? true, :*assert* true},
-;;  :loc
-;;  {:ns truss-examples,
-;;   :line 136,
-;;   :column 3,
-;;   :file "examples.cljc"},
-;;  :data {:dynamic {:ring-session {:user-name "Stu"}}, :arg nil}}
+;;  :coords [72 3],
+;;  :truss/ctx {:method :get, :uri "/", :session {:user-id 101}}}
 
-;;;; Assertions within data structures
+;; Assert within data structures, compare:
 
-;;; Compare
 (have vector?      [:a :b :c]) ; => [:a :b :c]
 (have keyword? :in [:a :b :c]) ; => [:a :b :c]
 
-;;;; Assertions within :pre/:post conditions
+;; Assert within `:pre`/`:post` conditions:
 
 (defn square [n]
-  ;; Note the use of `have?` instead of `have`
-  {:pre  [(have? #(or (nil? %) (integer? %)) n)]
+  {:pre  [(have? #(or (nil? %) (integer? %)) n)] ; Note `have?`, not `have`
    :post [(have? integer? %)]}
   (let [n (or n 1)]
     (* n n)))
 
 (square 5)   ; => 25
 (square nil) ; => 1
+(square "5") ; => Throws
 
-;;;; Special predicates
-
-;; A predicate can be anything
+;; Use any unary predicate:
 (have #(and (integer? %) (odd? %) (> % 5)) 7) ; => 7
 
-;; Omit the predicate as a shorthand for #(not (nil? %))
+;; Omit predicate as shorthand non-nil:
 (have "foo") ; => "foo"
-(have nil)   ; => Error
+(have nil)   ; => Throws
 
-;;; There's a number of other optional shorthands
-
-;; Combine predicates (or)
-(have [:or nil? string?] "foo") ; => "foo"
-
-;; Combine predicates (and)
+;; Combine predicates:
+(have [:or nil? string?] "foo")     ; => "foo"
 (have [:and integer? even? pos?] 6) ; => 6
 
 ;; Element of
 (have [:el #{:a :b :c :d}] :b) ; => :b
-(have [:el #{:a :b :c :d}] :e) ; => Error
+(have [:el #{:a :b :c :d}] :e) ; => Throws
 
 ;; Superset
 (have [:set>= #{:a :b}] #{:a :b :c}) ; => #{:a :b :c}
@@ -194,33 +125,31 @@
 (have [:ks>= #{:a :b}] {:a "A" :b nil :c "C"}) ; => {:a "A" :b nil :c "C"}
 
 ;; Non-nil keys
-(have [:ks-nnil? #{:a :b}] {:a "A" :b nil :c "C"}) ; => Error
+(have [:ks-nnil? #{:a :b}] {:a "A" :b nil :c "C"}) ; => Throws
 
-;;;; Writing custom validators
+;; Write custom validators:
 
-;; A custom predicate:
-(defn pos-int? [x] (and (integer? x) (pos? x)))
-
+(defn pos-int? "Custom predicate" [x] (and (integer? x) (pos? x)))
 (defn have-person
   "Returns given arg if it's a valid `person`, otherwise throws an error"
   [person]
-  (truss/with-data {:person person} ; (Optional) setup some extra debug data
-    (have? map? person)
-    (have? [:ks>= #{:age :name}] person)
-    (have? [:or nil? pos-int?] (:age person)))
+  (truss/with-ctx {:person person} ; (Optional) setup some extra debug data
+    (do
+      (have? map? person)
+      (have? [:ks>= #{:age :name}] person)
+      (have? [:or nil? pos-int?] (:age person))))
   person ; Return input if nothing's thrown
   )
 
-(have-person {:name "Steve" :age 33})   ; => {:name "Steve", :age 33}
-(have-person {:name "Alice" :age "33"}) ; => Error
+(have-person {:name "Steve" :age  33})  ; => {:name "Steve", :age 33}
+(have-person {:name "Alice" :age "33"}) ; => Throws
 
-;;;; Assertions without elision
+;; Assert whithout without elision (ignore `*assert*`):
 
 (defn get-restricted-resource [ring-session]
-  ;; This is an important security check so we'll use `have!` here instead of
-  ;; `have` to make sure the check is never elided (skipped):
+  ;; This is an important security check so we'll use `have!` instead
+  ;; of `have` to make sure the check is never elided (skipped):
   (have! string? (:auth-token ring-session))
-
   "return-restricted-resource-content")
 
 )

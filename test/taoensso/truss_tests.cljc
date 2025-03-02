@@ -10,7 +10,8 @@
   #?(:cljs
      (:require-macros
       [taoensso.truss-tests :refer
-       [parse-pred-form have-macro]])))
+       [macro1 macro2 macro3 macro4 macro5
+        parse-pred-form have-macro]])))
 
 (comment
   (remove-ns      'taoensso.truss-tests)
@@ -149,6 +150,20 @@
                   (truss/ex-info "msg" {:d :d1})))))
 
          {:truss/ctx {:c1 :c1a, :c2 :c2b, :c3 :c3a}, :d :d1}))])
+
+;;;; Callsites
+
+#?(:clj
+   (do
+     (defmacro macro1 "Non-preserving" [& body]                             `(macro2 ~@body))
+     (defmacro macro2 "Preserving"     [& body] (truss/keep-callsite        `(macro3 ~@body)))
+     (defmacro macro3 "Preserving"     [& body] (truss/merge-callsite &form `(macro4 ~@body)))
+     (defmacro macro4 "Preserving"     [& body] `(do ~(truss/keep-callsite  `(macro5 ~@body))))
+     (defmacro macro5 "Consumer"       [& body] `(do ~(truss/callsite-coords &form)))))
+
+(deftest _callsites
+  [(is (nil?    (macro1)) "&form meta lost at macro1->2")
+   (is (vector? (macro2)) "&form meta preserved from macro2 through macro5")])
 
 ;;;; Assertions
 

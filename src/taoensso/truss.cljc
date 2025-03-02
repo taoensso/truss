@@ -11,7 +11,7 @@
 
   #?(:cljs
      (:require-macros
-      [taoensso.truss :refer [typed-val callsite-coords try*]]))
+      [taoensso.truss :refer [typed-val try*]]))
 
   #?(:clj
      (:import
@@ -21,21 +21,7 @@
   (require '[taoensso.encore :as enc])
   (enc/sortv (:api (enc/interns-overview))))
 
-;;;; Misc utils
-
-#?(:clj (defmacro ^:no-doc typed-val [x] `{:value ~x, :type (type ~x)}))
-
-#?(:clj
-   (defmacro keep-callsite
-     "The long-standing CLJ-865 means that it's not possible for an inner
-     macro to access the `&form` metadata of a wrapping outer macro. This
-     means that wrapped macros lose calsite info, etc.
-
-     This util offers a workaround for macro authors:
-       (defmacro inner [] (meta &form))
-       (defmacro outer [] (keep-callsite `(inner)))
-       (outer) => {:keys [line column ...]}"
-     [form] `(with-meta ~form (meta ~'&form))))
+;;;; Callsites
 
 #?(:clj
    (defn callsite-coords
@@ -44,6 +30,26 @@
      [macro-form]
      (when-let [{:keys [line column]} (meta macro-form)]
        (when line (if column [line column] [line])))))
+
+#?(:clj (defn ^:no-doc merge-callsite [macro-form inner-form] (vary-meta inner-form merge (meta macro-form))))
+#?(:clj
+   (defmacro keep-callsite
+     "CLJ-865 means that it's not possible for an inner macro to access `&form`
+     metadata (incl. {:keys [line column]}) of a wrapping outer macro:
+
+       (defmacro inner [] (meta &form))
+       (defmacro outer [] `(inner))
+       (outer) => nil
+
+     This util offers a workaround for authors of the outer macro, preserving
+     the outer `&form` metadata for the inner macro:
+
+       (defmacro inner [] (meta &form))
+       (defmacro outer [] (keep-callsite `(inner)))
+       (outer) => {:keys [line column ...]}"
+     [inner-form] `(merge-callsite ~'&form ~inner-form)))
+
+;;;; Misc
 
 (defn submap?
   "Returns true iff `sub-map` is a (possibly nested) submap of `super-map`,
@@ -153,6 +159,8 @@
      ~form))
 
 ;;;; Error utils
+
+#?(:clj (defmacro ^:no-doc typed-val [x] `{:value ~x, :type (type ~x)}))
 
 (defn error?
   "Returns true iff given platform error (`Throwable` or `js/Error`)."

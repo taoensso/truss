@@ -2,9 +2,9 @@ This project uses [**Break Versioning**](https://www.taoensso.com/break-versioni
 
 ---
 
-# `v2.0.0` (2025-02-27)
+# `v2.0.5` (2025-03-03)
 
-- 📦 **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.0.0)
+- 📦 **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.0.5)
 - **Versioning**: [Break Versioning](https://www.taoensso.com/break-versioning)
 
 This is a **major rewrite of Truss** that expands the library's scope, and modernises its implementation. There are **breaking changes** to the ex-data produced by the 4x assertion macros ([`have`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have), [`have?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have?), [`have!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have!), [`have!?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have!?)) in Truss and [Encore](https://www.taoensso.com/encore).

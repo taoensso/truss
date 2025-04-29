@@ -562,13 +562,30 @@
          error)))))
 
 (def ^:dynamic *failed-assertion-handler*
-  "?(fn [failed-assertion-info]) to call with failed assertion info map
-  when a Truss assertion (`have`, `have?`, `have!`, `have!?`) fails.
+  "Unary handler fn to call with failed assertion info map when a Truss
+  assertion (`have`, `have?`, `have!`, `have!?`) fails.
 
   Will by default throw an appropriate `truss/ex-info`.
-  This is a decent place to inject logging for assertion failures."
+  This is a decent place to inject logging for assertion failures, etc.
+
+  Arg given to handler is a map with keys:
+
+  `:ns` ----------- ?str namespace of assertion callsite
+  `:coords` ------- ?[line column] of assertion callsite
+
+  `:pred` --------- Assertion predicate form  (e.g. `clojure.core/string?` sym)
+  `:arg-form` ----- Assertion argument  form given  to predicate (e.g. `x` sym)
+  `:arg-val` ------ Runtime value of argument given to predicate
+
+  `:data` --------- Optional arbitrary data map provided to assertion macro
+  `:error` -------- `Throwable` or `js/Error` thrown evaluating predicate"
+
   (fn  [failed-assertion-info]
     (-> failed-assertion-info failed-assertion-ex-info throw)))
+
+(comment
+  (let [foo (fn [x] (have true? x))]
+    (binding [*failed-assertion-handler* identity] (foo false))))
 
 (defn ^:no-doc failed-assertion!
   "Private, don't use."

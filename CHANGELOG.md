@@ -2,29 +2,27 @@ This project uses [**Break Versioning**](https://www.taoensso.com/break-versioni
 
 ---
 
-# `v2.0.6` (2025-04-29)
+# `v2.1.0` (2025-04-29)
 
-- **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.0.6)
+- **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.1.0)
 - **Versioning**: [Break Versioning](https://www.taoensso.com/break-versioning)
 
 This is a **major rewrite of Truss** that expands the library's scope, and modernises its implementation. There are **breaking changes** to the ex-data produced by the 4x assertion macros ([`have`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have), [`have?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have?), [`have!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have!), [`have!?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have!?)) in Truss and [Encore](https://www.taoensso.com/encore).
 
-This is a non-breaking update for folks not using assertion ex-data.
-
-Apologies for any inconvenience! - [Peter Taoussanis](https://www.taoensso.com) 🙏
+This should be a non-breaking update for folks not using assertion ex-data, but please [ping me](http://taoensso.com/truss/slack) if you run into any unexpected trouble. Apologies for the inconvenience! - [Peter Taoussanis](https://www.taoensso.com) 🙏
 
 ## CHANGES since v1.x
 
 ### Deprecated assertion API
 
-- [`set-error-fn!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#set-error-fn!) and [`with-error-fn`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#with-error-fn) have been deprecated. Please use [`*failed-assertion-handler*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#*failed-assertion-handler*) instead.
+- [`set-error-fn!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#set-error-fn!) and [`with-error-fn`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#with-error-fn) have been deprecated. Please use [`*failed-assertion-handler*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#*failed-assertion-handler*) instead (see linked docstring for details).
 - [`get-data`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#get-data) and [`with-data`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#with-data) have been deprecated. Please use [`*ctx*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#*ctx*) instead.
 
 ### Changes to assertion ex-data
 
-The ex-data included in assertion failures has changed!
+By default, Truss throws an `ex-info` exception on assertion failures. The included ex-data has changed!
 
-Old ex-data:
+Old ex-data (Truss v1):
 ```
 :pred ------ (Unchanged) Predicate form
 :arg ------- (Unchanged) {:keys [form value type]}
@@ -38,14 +36,14 @@ Old ex-data:
 :err ------- Error thrown during pred check
 ```
 
-New ex-data:
+New ex-data (Truss v2):
 ```
 :pred ------ (Unchanged) Predicate form
 :arg ------- (Unchanged) {:keys [form value type]}
 
-:inst ------ `js/Error` or `java.time.Instant`
+:inst ------ `js/Error` or `java.time.Instant` (note type change!)
 :ns -------- Namespace string
-:coords ---- [line column]
+:coords ---- ?[line column]
 :data ------ Optional `:data` value (replaces :data/arg)
 :truss/ctx - `truss/*ctx*` value (replaces :data/dynamic)
 
@@ -66,7 +64,9 @@ New ex-data:
 
 ## Since v2.0.0
 
-- Fix broken Clj `set-error-fn!` (v2.0.6)
+- \[doc] Document arg given to `*failed-assertion-handler*` \[7de9a82] (v2.1.0)
+- \[fix] `set-error-fn!` should convert from v2 to v1 handler arg \[d6bc7c5] (v2.1.0)
+- \[fix] Fix broken Clj `set-error-fn!` \[e99fe6b] (v2.0.6)
 
 ---
 

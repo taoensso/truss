@@ -2,9 +2,9 @@ This project uses [**Break Versioning**](https://www.taoensso.com/break-versioni
 
 ---
 
-# `v2.0.5` (2025-03-03)
+# `v2.0.6` (2025-04-29)
 
-- **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.0.5)
+- **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.0.6)
 - **Versioning**: [Break Versioning](https://www.taoensso.com/break-versioning)
 
 This is a **major rewrite of Truss** that expands the library's scope, and modernises its implementation. There are **breaking changes** to the ex-data produced by the 4x assertion macros ([`have`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have), [`have?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have?), [`have!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have!), [`have!?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#have!?)) in Truss and [Encore](https://www.taoensso.com/encore).
@@ -63,6 +63,10 @@ New ex-data:
 - Added new contextual exceptions API: [`ex-info`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#ex-info), [`ex-info!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#ex-info!), [`*ctx*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#*ctx*), [`set-ctx!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#set-ctx!), [`with-ctx`, `with-ctx+`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#with-ctx+).
   
 - Added new Error utils imported (moved) from Encore: [`error?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#error?), [`try*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#try*), [`catching`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching), [`matching-error`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#matching-error), [`throws`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#throws), [`throws?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#throws?), [`catching-rf`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching-rf), [`catching-xform`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching-xform), [`unexpected-arg!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#unexpected-arg!).
+
+## Since v2.0.0
+
+- Fix broken Clj `set-error-fn!` (v2.0.6)
 
 ---
 

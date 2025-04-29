@@ -1,4 +1,4 @@
-(defproject com.taoensso/truss "2.0.0"
+(defproject com.taoensso/truss "2.0.6"
   :author "Peter Taoussanis <https://www.taoensso.com>"
   :description "Micro toolkit for Clojure/Script errors."
   :url "https://www.taoensso.com/truss"

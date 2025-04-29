@@ -702,14 +702,21 @@
               {:data (impl/assoc-some nil {:dynamic *ctx* :arg data})
                :err  error})))))))
 
-(defn ^:no-doc ^:deprecated get-dynamic-assertion-data [] *ctx*)
-(defn ^:no-doc ^:deprecated get-data                   [] *ctx*)
-(defn ^:no-doc ^:deprecated set-error-fn! [f]
+(defn ^:no-doc ^:deprecated get-dynamic-assertion-data "Prefer `*ctx*`" [] *ctx*)
+(defn ^:no-doc ^:deprecated get-data                   "Prefer `*ctx*`" [] *ctx*)
+(defn ^:no-doc ^:deprecated set-error-fn!
+  "Prefer `*failed-assertion-handler*` (note breaking changes to argument)."
+  [f]
   #?(:cljs (set!             *failed-assertion-handler*         (legacy-error-fn f))
      :clj  (alter-var-root #'*failed-assertion-handler* (fn [_] (legacy-error-fn f)))))
 
-#?(:clj (defmacro ^:no-doc ^:deprecated with-dynamic-assertion-data [data & body] `(binding [*ctx* ~data] ~@body)))
-#?(:clj (defmacro ^:no-doc ^:deprecated with-data                   [data & body] `(binding [*ctx* ~data] ~@body)))
-#?(:clj (defmacro ^:no-doc ^:deprecated with-error-fn               [f    & body] `(binding [*failed-assertion-handler* (legacy-error-fn ~f)] ~@body)))
+#?(:clj (defmacro ^:no-doc ^:deprecated with-dynamic-assertion-data "Prefer `*ctx*`" [data & body] `(binding [*ctx* ~data] ~@body)))
+#?(:clj (defmacro ^:no-doc ^:deprecated with-data                   "Prefer `*ctx*`" [data & body] `(binding [*ctx* ~data] ~@body)))
+#?(:clj
+   (defmacro ^:no-doc ^:deprecated with-error-fn
+     "Prefer `*failed-assertion-handler*` (note breaking changes to argument)."
+     [f & body]
+     `(binding [*failed-assertion-handler* (legacy-error-fn ~f)]
+        ~@body)))
 
 (comment (force (:msg_ (with-data {:a :A} (with-error-fn force (have true? false))))))

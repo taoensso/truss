@@ -650,8 +650,8 @@
 (defn ^:no-doc ^:deprecated get-dynamic-assertion-data [] *ctx*)
 (defn ^:no-doc ^:deprecated get-data                   [] *ctx*)
 (defn ^:no-doc ^:deprecated set-error-fn! [f]
-  #?(:cljs (set!           *failed-assertion-handler*         f)
-     :clj  (alter-var-root *failed-assertion-handler* (fn [_] f))))
+  #?(:cljs (set!             *failed-assertion-handler*         f)
+     :clj  (alter-var-root #'*failed-assertion-handler* (fn [_] f))))
 
 #?(:clj (defmacro ^:no-doc ^:deprecated with-dynamic-assertion-data [data & body] `(binding [*ctx* ~data] ~@body)))
 #?(:clj (defmacro ^:no-doc ^:deprecated with-data                   [data & body] `(binding [*ctx* ~data] ~@body)))

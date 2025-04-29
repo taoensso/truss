@@ -507,8 +507,9 @@
 
 ;;;; Assertions
 
-(let [newline #?(:cljs "\n" :clj (System/getProperty "line.separator"))
-      legacy-ex-data? (impl/legacy-assertion-ex-data?)]
+(def ^:private sys-newline #?(:cljs "\n" :clj (System/getProperty "line.separator")))
+
+(let [legacy-ex-data? (impl/legacy-assertion-ex-data?)]
 
   (defn failed-assertion-ex-info
     "Returns an appropriate `truss/ex-info` for given failed assertion info map."
@@ -528,8 +529,8 @@
            (if error
              (let [error-msg (ex-message error)]
                (if undefined-arg?
-                 (str msg newline "Error evaluating arg: "  error-msg)
-                 (str msg newline "Error evaluating pred: " error-msg)))
+                 (str msg sys-newline "Error evaluating arg: "  error-msg)
+                 (str msg sys-newline "Error evaluating pred: " error-msg)))
              msg)]
 
        (ex-info msg
@@ -647,12 +648,51 @@
 
 ;;;; Deprecated
 
+(defn ^:no-doc legacy-error-fn
+  "Private, don't use. Wraps given Truss v1 `error-fn` to convert
+  Truss v2 `*failed-assertion-handler*` arg."
+  [f]
+  (when f
+    (fn [failed-assertion-info]
+      (f
+        (delay
+          (let [{:keys [ns coords, pred arg-form arg-val, data error]} failed-assertion-info
+                [line column] coords
+                msg_
+                (delay
+                  (let [msg
+                        (str "Invariant failed at " ns
+                          (when line (str "[" line (when column (str "," column)) "]")) ": "
+                          (list pred arg-form))]
+
+                    (if error
+                      (let [error-msg (ex-message error)]
+                        (if (impl/identical-kw? arg-val :truss/exception)
+                          (str msg sys-newline sys-newline "Error evaluating arg: "  error-msg)
+                          (str msg sys-newline sys-newline "Error evaluating pred: " error-msg)))
+                      msg)))]
+
+            (impl/assoc-some
+              {:msg_ msg_
+               :dt   #?(:clj (java.util.Date.) :cljs (js/Date.))
+               :pred pred
+               :arg  {:form        arg-form
+                      :value       arg-val
+                      :type  (type arg-val)}
+               :env  {:*assert* *assert*}
+               :loc  {:ns ns, :line line, :column column}}
+
+              {:data (impl/assoc-some nil {:dynamic *ctx* :arg data})
+               :err  error})))))))
+
 (defn ^:no-doc ^:deprecated get-dynamic-assertion-data [] *ctx*)
 (defn ^:no-doc ^:deprecated get-data                   [] *ctx*)
 (defn ^:no-doc ^:deprecated set-error-fn! [f]
-  #?(:cljs (set!             *failed-assertion-handler*         f)
-     :clj  (alter-var-root #'*failed-assertion-handler* (fn [_] f))))
+  #?(:cljs (set!             *failed-assertion-handler*         (legacy-error-fn f))
+     :clj  (alter-var-root #'*failed-assertion-handler* (fn [_] (legacy-error-fn f)))))
 
 #?(:clj (defmacro ^:no-doc ^:deprecated with-dynamic-assertion-data [data & body] `(binding [*ctx* ~data] ~@body)))
 #?(:clj (defmacro ^:no-doc ^:deprecated with-data                   [data & body] `(binding [*ctx* ~data] ~@body)))
-#?(:clj (defmacro ^:no-doc ^:deprecated with-error-fn               [f    & body] `(binding [*failed-assertion-handler* ~f] ~@body)))
+#?(:clj (defmacro ^:no-doc ^:deprecated with-error-fn               [f    & body] `(binding [*failed-assertion-handler* (legacy-error-fn ~f)] ~@body)))
+
+(comment (force (:msg_ (with-data {:a :A} (with-error-fn force (have true? false))))))

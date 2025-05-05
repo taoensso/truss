@@ -97,7 +97,7 @@ Exceptions unexpectedly thrown in production can be fiendishly difficult to unde
 
 Truss's [inline assertions](#inline-assertions) (above) provide one solution to the problem of vague exceptions.
 
-Truss's **contextual exception** API provides another. Any time a [`truss/ex-info`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#ex-info) is thrown, it'll include the dynamic [`*ctx*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#*ctx*) value.
+Truss's **contextual exception** API provides another. Any time a [`truss/ex-info`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#ex-info) is thrown, it'll include the dynamic [`*ctx*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#*ctx*) value in its `ex-data`.
 
 You can use [`set-ctx!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#set-ctx!), [`with-ctx`, `with-ctx+`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#with-ctx+) to easily establish relevant information about what your code is doing. Then if something unexpectedly throws, this context info will be included in relevant exceptions.
 

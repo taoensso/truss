@@ -115,7 +115,7 @@
                 (set?     pred-form)
                 (contains? safe-pred-forms sym))]
 
-          [safe? (or sym pred-form) sym])
+          [safe? (or sym pred-form) (or sym pred-form)])
 
         ;; Special predicate
         (let [[kind a1 a2 a3]      pred-form

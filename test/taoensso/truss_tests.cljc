@@ -204,7 +204,8 @@
    (is (= (parse-pred-form [:or nil? [:or seq] integer?])              '[true  (core/fn [x] (impl/or? (core/nil? x) (impl/catching (core/seq x)) (core/integer? x)))]))
    (is (= (parse-pred-form pred-fn1)                                   '[false taoensso.truss-tests/pred-fn1]))
    (is (= (parse-pred-form pred-fn2)                                   '[true  taoensso.truss-tests/pred-fn2]))
-   (is (= (parse-pred-form pred-macro)                                 '[false taoensso.truss-tests/pred-macro]))])
+   (is (= (parse-pred-form pred-macro)                                 '[false taoensso.truss-tests/pred-macro]))
+   (is (= (parse-pred-form  (fn [x] x))                                '[false (fn [x] x)]))])
 
 ;;;; Assertions
 

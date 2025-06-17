@@ -12,9 +12,9 @@
 
   :profiles
   {;; :default [:base :system :user :provided :dev]
-   :provided {:dependencies [[org.clojure/clojurescript "1.11.132"]
+   :provided {:dependencies [[org.clojure/clojurescript "1.12.42"]
                              [org.clojure/clojure       "1.11.4"]]}
-   :c1.12    {:dependencies [[org.clojure/clojure       "1.12.0"]]}
+   :c1.12    {:dependencies [[org.clojure/clojure       "1.12.1"]]}
    :c1.11    {:dependencies [[org.clojure/clojure       "1.11.4"]]}
    :c1.10    {:dependencies [[org.clojure/clojure       "1.10.3"]]}
 
@@ -36,7 +36,7 @@
 
     :dependencies
     [[org.clojure/test.check    "1.1.1"]
-     [com.taoensso/encore       "3.134.0"
+     [com.taoensso/encore       "3.152.0"
       :exclusions [com.taoensso/truss]]]
 
     :plugins

@@ -153,7 +153,7 @@ Example:
 
 ## Funding
 
-You can [help support][sponsor] continued work on this project, thank you!! 🙏
+You can [help support][sponsor] continued work on this project and [others][my work], thank you!! 🙏
 
 ## License
 
@@ -165,14 +165,15 @@ Licensed under [EPL 1.0](LICENSE.txt) (same as Clojure).
 [GitHub releases]: ../../releases
 [GitHub issues]:   ../../issues
 [GitHub wiki]:     ../../wiki
-[Slack channel]: https://www.taoensso.com/truss/slack
+[Slack channel]:   https://www.taoensso.com/truss/slack
 
 [Peter Taoussanis]: https://www.taoensso.com
 [sponsor]:          https://www.taoensso.com/sponsor
+[my work]:          https://www.taoensso.com/clojure-libraries
 
 <!-- Project -->
 
-[cljdoc]: https://cljdoc.org/d/com.taoensso/truss/
+[cljdoc]: https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss
 
 [Clojars SVG]: https://img.shields.io/clojars/v/com.taoensso/truss.svg
 [Clojars URL]: https://clojars.org/com.taoensso/truss

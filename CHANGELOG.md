@@ -2,6 +2,21 @@ This project uses [**Break Versioning**](https://www.taoensso.com/break-versioni
 
 ---
 
+# `v2.2.0` (2025-08-21)
+
+- **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.2.0)
+- **Versioning**: [Break Versioning](https://www.taoensso.com/break-versioning)
+
+This is a **feature release** focused on quality-of-life improvements. It should be a non-breaking upgrade for the vast majority of typical users, but please note the changes below to be sure.
+
+## Since v2.1.0 (2025-04-29)
+
+- ➤ **\[mod]** Make macros: `ex-info`, `ex-info!`, `unexpected-arg!` \[14e3e86]
+- \[new] `with-ctx/+`: allow multi-form bodies \[d9228d8]
+- \[doc] Misc doc improvements, added [intro video](https://youtu.be/vGewwWuzk9o)
+
+---
+
 # `v2.1.0` (2025-04-29)
 
 - **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.1.0)

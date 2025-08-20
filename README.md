@@ -15,7 +15,7 @@ It works great with [Telemere](https://www.taoensso.com/telemere) and [Tufte](ht
 
 ## Latest release/s
 
-- `2025-04-29` `v2.1.0`: [release info](../../releases/tag/v2.1.0) (v2 expands Truss's scope from just inline assertions to a general toolkit for Clojure/Script errors)
+- `2025-08-21` `v2.2.0`: [release info](../../releases/tag/v2.2.0)
 
 [![Clj tests][Clj tests SVG]][Clj tests URL]
 [![Cljs tests][Cljs tests SVG]][Cljs tests URL]

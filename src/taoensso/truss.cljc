@@ -88,18 +88,13 @@
 ;;;; Error context
 
 (def ^:dynamic *ctx*
-  "Optional context to add to the data of exceptions created by `truss/ex-info`.
-
-  Value may be any type, but is usually nil or a map. Default (root) value is nil.
-  When present, value will be assoc'ed to `:truss/ctx` key of exception data.
-
-  Useful for dynamically providing arbitrary contextual info to exceptions:
+  "Context map to assoc to `:truss/ctx` key of `truss/ex-info` data map.
 
   Re/bind dynamic        value using `with-ctx`, `with-ctx+`, or `binding`.
   Modify  root (default) value using `set-ctx!`.
 
-  As with all dynamic Clojure vars, \"binding conveyance\" applies when using
-  futures, agents, etc."
+  As with all dynamic Clojure vars, \"binding conveyance\" applies when
+  using futures, agents, etc."
   nil)
 
 (defn ex-info

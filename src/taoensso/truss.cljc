@@ -128,8 +128,8 @@
      :cljs (set!                *ctx*          root-ctx-val)))
 
 (defmacro with-ctx
-  "Evaluates given form with given `*ctx*` value. See `*ctx*` for details."
-  [ctx-val form] `(binding [*ctx* ~ctx-val] ~form))
+  "Evaluates given body with given `*ctx*` value. See `*ctx*` for details."
+  [ctx-val & body] `(binding [*ctx* ~ctx-val] ~@body))
 
 (declare unexpected-arg!)
 
@@ -147,16 +147,16 @@
        :expected '#{nil map fn}})))
 
 (defmacro with-ctx+
-  "Evaluates given form with updated `*ctx*` value.
+  "Evaluates given body with updated `*ctx*` value.
 
   `update-map-or-fn` may be:
     - A map to merge with    current `*ctx*` value, or
     - A unary fn to apply to current `*ctx*` value
 
   See `*ctx*` for details."
-  [update-map-or-fn form]
+  [update-map-or-fn & body]
   `(binding [*ctx* (update-ctx *ctx* ~update-map-or-fn)]
-     ~form))
+     ~@body))
 
 ;;;; Error utils
 

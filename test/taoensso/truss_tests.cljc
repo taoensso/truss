@@ -137,19 +137,21 @@
          (throws? :common {:call '(rf acc in) :args {:in {:value :a}}}))
      "Error in rf")])
 
-;;;; Error context
+;;;; Truss exceptions
 
-(deftest  _ex-info
-  [(is (= (ex-data (truss/ex-info "msg")) {}))
-   (is (= (ex-data (truss/with-ctx {:c :c1} (truss/ex-info "msg")))          {:truss/ctx {:c :c1}}))
-   (is (= (ex-data (truss/with-ctx {:c :c1} (truss/ex-info "msg" {:d :d1}))) {:truss/ctx {:c :c1}, :d :d1}))
-   (is (= (ex-data
-            (truss/with-ctx {:c1 :c1a, :c2 :c2a}
-              (truss/with-ctx+ {:c2 :c2b}
-                (truss/with-ctx+ #(assoc % :c3 :c3a)
-                  (truss/ex-info "msg" {:d :d1})))))
+(deftest _ex-info
+  [(is (submap? (ex-data (truss/ex-info "msg")) {:ns string?, :coords vector?}))
+   (is (submap? (ex-data (truss/with-ctx {:c :c1} (truss/ex-info "msg")))          {:truss/ctx {:c :c1}}))
+   (is (submap? (ex-data (truss/with-ctx {:c :c1} (truss/ex-info "msg" {:d :d1}))) {:truss/ctx {:c :c1}, :d :d1}))
+   (is (submap? (ex-data
+                  (truss/with-ctx {:c1 :c1a, :c2 :c2a}
+                    (truss/with-ctx+ {:c2 :c2b}
+                      (truss/with-ctx+ #(assoc % :c3 :c3a)
+                        (truss/ex-info "msg" {:d :d1})))))
 
-         {:truss/ctx {:c1 :c1a, :c2 :c2b, :c3 :c3a}, :d :d1}))])
+         {:truss/ctx {:c1 :c1a, :c2 :c2b, :c3 :c3a}, :d :d1
+          :ns     string?
+          :coords vector?}))])
 
 ;;;; Callsites
 

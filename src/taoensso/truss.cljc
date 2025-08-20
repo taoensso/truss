@@ -11,7 +11,11 @@
 
   #?(:cljs
      (:require-macros
-      [taoensso.truss :refer [typed-val try*]]))
+      [taoensso.truss :refer
+       [keep-callsite typed-val ex-info ex-info! unexpected-arg!
+        with-ctx with-ctx+ try* catching throws throws?
+        have have? have! have!?
+        with-dynamic-assertion-data with-data with-error-fn]]))
 
   #?(:clj
      (:import
@@ -51,6 +55,8 @@
 
 ;;;; Misc
 
+#?(:clj (defmacro ^:no-doc typed-val [x] `{:value ~x, :type (type ~x)}))
+
 (defn ^:no-doc submap?
   "Returns true iff `sub-map` is a (possibly nested) submap of `super-map`,
   i.e. iff every (nested) value in `sub-map` has the same (nested) value in `super-map`.
@@ -85,7 +91,7 @@
     true
     sub-map))
 
-;;;; Error context
+;;;; Truss exceptions
 
 (def ^:dynamic *ctx*
   "Context map to assoc to `:truss/ctx` key of `truss/ex-info` data map.
@@ -97,24 +103,75 @@
   using futures, agents, etc."
   nil)
 
-(defn ex-info
-  "Like `core/ex-info` but when dynamic `*ctx*` value is present, it will be
-  assoc'ed to `:truss/ctx` key of returned exception's data.
+(defn ^:no-doc ex-info*
+  "Private, don't use."
+  [ns coords msg data-map cause]
+  (let [data-map
+        (if coords
+          (conj {:ns ns, :coords coords} data-map)
+          (conj {:ns ns}                 data-map))
 
-  Useful for dynamically providing arbitrary contextual info to exceptions.
-  See `*ctx*` for details."
-  ([msg               ] (ex-info msg {}       nil))
-  ([msg data-map      ] (ex-info msg data-map nil))
-  ([msg data-map cause]
-   (if-let [ctx *ctx*]
-     (core/ex-info msg (assoc data-map :truss/ctx ctx) cause)
-     (core/ex-info msg        data-map                 cause))))
+        data-map
+        (if-let [ctx *ctx*]
+          (assoc data-map :truss/ctx ctx)
+          (do    data-map))]
 
-(defn ex-info!
-  "Throws a `truss/ex-info`."
-  ([msg               ] (throw (ex-info msg {}       nil)))
-  ([msg data-map      ] (throw (ex-info msg data-map nil)))
-  ([msg data-map cause] (throw (ex-info msg data-map cause))))
+    (core/ex-info msg data-map cause)))
+
+(defn ^:no-doc unexpected-arg!*
+  "Private, don't use."
+  [ns coords arg kvs]
+  (throw
+    (ex-info* ns coords
+      (or    (get    kvs :msg) (str "Unexpected argument: " (if (nil? arg) "<nil>" arg)))
+      (assoc (dissoc kvs :msg) :arg (typed-val arg)) nil)))
+
+#?(:clj
+   (defmacro ex-info
+     "Macro version of `core/ex-info` that adds extra keys to ex-info's data map:
+       `:truss/ctx` -- Value of dynamic `truss/*ctx*` when ex-info created
+       `:ns` --------- Namespace string of ex-info callsite
+       `:coords` ----- [line number]    of ex-info callsite, only present
+                       if ex-info isn't wrapped by another macro (or see
+                      `keep-callsite` for a workaround)."
+     ([msg               ] `(ex-info* ~(str *ns*) ~(callsite-coords &form) ~msg nil       nil))
+     ([msg data-map      ] `(ex-info* ~(str *ns*) ~(callsite-coords &form) ~msg ~data-map nil))
+     ([msg data-map cause] `(ex-info* ~(str *ns*) ~(callsite-coords &form) ~msg ~data-map ~cause))))
+
+#?(:clj
+   (defmacro ex-info!
+     "Throws a `truss/ex-info`."
+     ([msg               ] `(throw (ex-info* ~(str *ns*) ~(callsite-coords &form) ~msg nil       nil)))
+     ([msg data-map      ] `(throw (ex-info* ~(str *ns*) ~(callsite-coords &form) ~msg ~data-map nil)))
+     ([msg data-map cause] `(throw (ex-info* ~(str *ns*) ~(callsite-coords &form) ~msg ~data-map ~cause)))))
+
+#?(:clj
+   (defmacro unexpected-arg!
+     "Throws a `truss/ex-info` to indicate an unexpected argument:
+
+       (defn my-function [mode]
+         (case mode
+           :read  (do <...>)
+           :write (do <...>)
+           (unexpected-arg! mode
+             {:param       'mode
+              :context  `my-function
+              :expected #{:read :write}})))
+
+       (my-function :invalid-mode) => throws
+         Unexpected argument: :invalid-mode
+         {:param 'mode,
+          :arg {:value :unexpected, :type clojure.lang.Keyword},
+          :context 'my-ns/my-function,
+          :expected #{:read :write}
+          ...}"
+
+     {:arglists '([arg] [arg kvs])}
+     ([arg k1 v1 & more] `(unexpected-arg!* ~(str *ns*) ~(callsite-coords &form) ~arg ~(apply hash-map k1 v1 more))) ; Back compatibility
+     ([arg    ]          `(unexpected-arg!* ~(str *ns*) ~(callsite-coords &form) ~arg nil))
+     ([arg kvs]          `(unexpected-arg!* ~(str *ns*) ~(callsite-coords &form) ~arg ~kvs))))
+
+;;;; Context utils
 
 (defn set-ctx!
   "Set `*ctx*` var's default (root) value. See `*ctx*` for details."
@@ -125,8 +182,6 @@
 (defmacro with-ctx
   "Evaluates given body with given `*ctx*` value. See `*ctx*` for details."
   [ctx-val & body] `(binding [*ctx* ~ctx-val] ~@body))
-
-(declare unexpected-arg!)
 
 (defn ^:no-doc update-ctx
   "Returns `new-ctx` given `old-ctx` and an update map or fn."
@@ -154,8 +209,6 @@
      ~@body))
 
 ;;;; Error utils
-
-#?(:clj (defmacro ^:no-doc typed-val [x] `{:value ~x, :type (type ~x)}))
 
 (defn error?
   "Returns true iff given platform error (`Throwable` or `js/Error`)."
@@ -318,43 +371,6 @@
      ([catch-class expr] `(try* ~expr (catch ~catch-class ~'_)))))
 
 (comment (catching (zero? "9")))
-
-(defn unexpected-arg!
-  "Throws `truss/ex-info` to indicate an unexpected argument.
-  Takes optional kvs for merging into exception's data map.
-
-    (let [mode :unexpected]
-      (case mode
-        :read  (do <...>)
-        :write (do <...>)
-        (unexpected-arg! mode
-          {:param       'mode
-           :context  `my-function
-           :expected #{:read :write}}))) =>
-
-    Unexpected argument: :unexpected
-    {:param 'mode,
-     :arg {:value :unexpected, :type clojure.lang.Keyword},
-     :context 'taoensso.encore/my-function,
-     :expected #{:read :write}}"
-
-  {:arglists
-   '([arg]
-     [arg   {:keys [msg context param expected ...]}]
-     [arg & {:keys [msg context param expected ...]}])}
-
-  ([arg     ] (unexpected-arg! arg nil))
-  ([arg opts]
-   (throw
-     (ex-info (or (get opts :msg) (str "Unexpected argument: " (if (nil? arg) "<nil>" arg)))
-       (conj {:arg (typed-val arg)} (dissoc opts :msg)))))
-
-  ([arg k1 v1                  ] (unexpected-arg! arg {k1 v1}))
-  ([arg k1 v1 k2 v2            ] (unexpected-arg! arg {k1 v1, k2 v2}))
-  ([arg k1 v1 k2 v2 k3 v3      ] (unexpected-arg! arg {k1 v1, k2 v2, k3 v3}))
-  ([arg k1 v1 k2 v2 k3 v3 k4 v4] (unexpected-arg! arg {k1 v1, k2 v2, k3 v3, k4 v4})))
-
-(comment (unexpected-arg! :arg :expected '#{string?}))
 
 (defn matching-error
   "Given a platform error and criteria for matching, returns the error if it

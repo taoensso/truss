@@ -100,7 +100,7 @@ Truss's [inline assertions](#inline-assertions) (above) provide one solution to 
 
 Truss's **contextual exception** API provides another. Any time a [`truss/ex-info`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#ex-info) is thrown, it'll include the dynamic [`*ctx*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#*ctx*) value in its `ex-data`.
 
-You can use [`set-ctx!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#set-ctx!), [`with-ctx`, `with-ctx+`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#with-ctx+) to easily establish relevant information about what your code is doing. Then if something unexpectedly throws, this context info will be included in relevant exceptions.
+You can use [`set-ctx!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#set-ctx!), [`with-ctx`, `with-ctx+`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#with-ctx+) to easily establish relevant information about what your code is doing. Then if something unexpectedly throws, this context (and callsite info) will be included in relevant exceptions.
 
 Example:
 

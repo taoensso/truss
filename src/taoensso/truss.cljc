@@ -51,7 +51,7 @@
 
 ;;;; Misc
 
-(defn submap?
+(defn ^:no-doc submap?
   "Returns true iff `sub-map` is a (possibly nested) submap of `super-map`,
   i.e. iff every (nested) value in `sub-map` has the same (nested) value in `super-map`.
 

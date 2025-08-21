@@ -23,6 +23,12 @@ It works great with [Telemere](https://www.taoensso.com/telemere) and [Tufte](ht
 
 See [here][GitHub releases] for earlier releases.
 
+## Quick intro
+
+<a href="https://youtu.be/vGewwWuzk9o" target="_blank">
+ <img src="https://img.youtube.com/vi/vGewwWuzk9o/maxresdefault.jpg" alt="Truss v2 intro" width="480" border="0" />
+</a>
+
 ## Inline assertions
 
 In my experience a large proportion of production Clojure errors are caused by a small set of recurring patterns like:

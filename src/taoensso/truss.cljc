@@ -12,10 +12,8 @@
   #?(:cljs
      (:require-macros
       [taoensso.truss :refer
-       [keep-callsite typed-val ex-info ex-info! unexpected-arg!
-        with-ctx with-ctx+ try* catching throws throws?
-        have have? have! have!?
-        with-dynamic-assertion-data with-data with-error-fn]]))
+       [typed-val ex-info unexpected-arg!
+        try* catching throws]]))
 
   #?(:clj
      (:import

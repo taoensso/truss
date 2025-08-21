@@ -107,9 +107,10 @@
   "Private, don't use."
   [ns coords msg data-map cause]
   (let [data-map
-        (if coords
-          (conj {:ns ns, :coords coords} data-map)
-          (conj {:ns ns}                 data-map))
+        (cond
+          (nil? ns)                               data-map
+          coords   (conj {:ns ns, :coords coords} data-map)
+          :else    (conj {:ns ns}                 data-map))
 
         data-map
         (if-let [ctx *ctx*]
@@ -467,7 +468,7 @@
               base-data (dissoc base-data :error/msg)]
 
           (fn default-error-fn [data cause] ; == (partial ex-info <msg>)
-            (throw (ex-info msg (conj base-data data) cause)))))]
+            (throw (ex-info* nil nil msg (conj base-data data) cause)))))]
 
   (defn catching-rf
     "Returns wrapper around given reducing function `rf` so that if `rf`
@@ -544,7 +545,7 @@
                  (str msg sys-newline "Error evaluating pred: " error-msg)))
              msg)]
 
-       (ex-info msg
+       (ex-info* nil nil msg
 
          (if legacy-ex-data?
            {:dt     (impl/now-dt*)

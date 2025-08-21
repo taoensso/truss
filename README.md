@@ -179,8 +179,8 @@ Licensed under [EPL 1.0](LICENSE.txt) (same as Clojure).
 [Clojars SVG]: https://img.shields.io/clojars/v/com.taoensso/truss.svg
 [Clojars URL]: https://clojars.org/com.taoensso/truss
 
-[Clj tests SVG]:  https://github.com/taoensso/truss/actions/workflows/clj-tests.yml/badge.svg
-[Clj tests URL]:  https://github.com/taoensso/truss/actions/workflows/clj-tests.yml
+[Clj tests SVG]:   https://github.com/taoensso/truss/actions/workflows/clj-tests.yml/badge.svg
+[Clj tests URL]:   https://github.com/taoensso/truss/actions/workflows/clj-tests.yml
 [Cljs tests SVG]:  https://github.com/taoensso/truss/actions/workflows/cljs-tests.yml/badge.svg
 [Cljs tests URL]:  https://github.com/taoensso/truss/actions/workflows/cljs-tests.yml
 [Graal tests SVG]: https://github.com/taoensso/truss/actions/workflows/graal-tests.yml/badge.svg

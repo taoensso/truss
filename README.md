@@ -1,5 +1,9 @@
 <a href="https://www.taoensso.com/clojure" title="More stuff by @ptaoussanis at www.taoensso.com"><img src="https://www.taoensso.com/open-source.png" alt="Taoensso open source" width="340"/></a>  
-[**API**][cljdoc] | [**Wiki**][GitHub wiki] | [Latest releases](#latest-releases) | [Slack channel][]
+[**API**][cljdoc] | [**Wiki**][GitHub wiki] | [Slack][] | Latest release: [v2.2.0](../../releases/tag/v2.2.0) (2025-08-21)
+
+[![Clj tests][Clj tests SVG]][Clj tests URL]
+[![Cljs tests][Cljs tests SVG]][Cljs tests URL]
+[![Graal tests][Graal tests SVG]][Graal tests URL]
 
 # Truss
 
@@ -12,16 +16,6 @@ It works great with [Telemere](https://www.taoensso.com/telemere) and [Tufte](ht
 <img width="640" src="../../blob/master/hero.png" alt="Egyptian ship with rope truss, the oldest known use of trusses (about 1250 BC)."/>
 
 > A doubtful friend is worse than a certain enemy. Let a man be one thing or the other, and we then know how to meet him. - Aesop
-
-## Latest release/s
-
-- `2025-08-21` `v2.2.0`: [release info](../../releases/tag/v2.2.0)
-
-[![Clj tests][Clj tests SVG]][Clj tests URL]
-[![Cljs tests][Cljs tests SVG]][Cljs tests URL]
-[![Graal tests][Graal tests SVG]][Graal tests URL]
-
-See [here][GitHub releases] for earlier releases.
 
 ## Quick intro
 
@@ -156,7 +150,7 @@ Example:
 
 - [Wiki][GitHub wiki] (getting started, usage, etc.)
 - API reference via [cljdoc][cljdoc]
-- Support via [Slack channel][] or [GitHub issues][]
+- Support via [Slack][] or [GitHub issues][]
 
 ## Funding
 
@@ -172,7 +166,7 @@ Licensed under [EPL 1.0](LICENSE.txt) (same as Clojure).
 [GitHub releases]: ../../releases
 [GitHub issues]:   ../../issues
 [GitHub wiki]:     ../../wiki
-[Slack channel]:   https://www.taoensso.com/truss/slack
+[Slack]:   https://www.taoensso.com/truss/slack
 
 [Peter Taoussanis]: https://www.taoensso.com
 [sponsor]:          https://www.taoensso.com/sponsor

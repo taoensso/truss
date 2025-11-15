@@ -2,6 +2,15 @@ This project uses [**Break Versioning**](https://www.taoensso.com/break-versioni
 
 ---
 
+# `v2.2.1` (2025-11-15)
+
+- **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.2.1)
+- **Versioning**: [Break Versioning](https://www.taoensso.com/break-versioning)
+
+This is a **hotfix release** to address an [issue](https://github.com/taoensso/truss/issues/19) with the `with-ctx+` util. It should be a safe upgrade for users of `v2.2.0`.
+
+---
+
 # `v2.2.0` (2025-08-21)
 
 - **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.2.0)

@@ -189,7 +189,7 @@
   [old-ctx update-map-or-fn]
   (cond
     (nil? update-map-or-fn)           old-ctx
-    (map? update-map-or-fn) (conj (or old-ctx) update-map-or-fn) ; Before ifn
+    (map? update-map-or-fn) (conj (or old-ctx {}) update-map-or-fn) ; Before ifn
     (ifn? update-map-or-fn) (update-map-or-fn old-ctx)
     :else
     (unexpected-arg! update-map-or-fn

@@ -207,14 +207,15 @@
 
 #?(:clj
    (defmacro assert1
-     [bool? coords [psafe? pform pshow] arg-form data-fn-form]
+     [bool? coords [psafe? pform pshow] [arg-form arg-show] data-fn-form]
      (let [cljs?         (:ns &env)
            [line column] coords
            eval-arg?     (list-form? arg-form)
            ns            (str *ns*)
 
            gs-error   (gensym "error")
-           gs-arg-val (gensym "arg-val")]
+           gs-arg-val (gensym "arg-val")
+           arg-show   (or arg-show arg-form)]
 
        (case [(if eval-arg? :eval-arg  :local-arg)
               (if psafe?    :safe-pred :unsafe-pred)]
@@ -222,12 +223,12 @@
          [:local-arg :safe-pred]
          `(if (~pform ~arg-form)
             ~(if bool? true arg-form)
-            (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-form ~arg-form ~data-fn-form nil))
+            (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~arg-form ~data-fn-form nil))
 
          [:local-arg :unsafe-pred]
          `(let [~gs-error (catching (if (~pform ~arg-form) nil FalsePredError) ~'e ~'e)]
             (if ~gs-error
-              (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-form ~arg-form ~data-fn-form ~gs-error)
+              (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~arg-form ~data-fn-form ~gs-error)
               ~(if bool? true arg-form)))
 
          [:eval-arg :safe-pred]
@@ -238,7 +239,7 @@
                   (if (~pform ~gs-arg-val) nil FalsePredError))]
 
             (if ~gs-error
-              (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-form ~gs-arg-val ~data-fn-form ~gs-error)
+              (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~gs-arg-val ~data-fn-form ~gs-error)
               ~(if bool? true gs-arg-val)))
 
          [:eval-arg :unsafe-pred]
@@ -251,10 +252,10 @@
                     ~'e ~'e))]
 
             (if ~gs-error
-              (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-form ~gs-arg-val ~data-fn-form ~gs-error)
+              (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~gs-arg-val ~data-fn-form ~gs-error)
               ~(if bool? true gs-arg-val)))))))
 
-(comment (macroexpand '(assert1 true [0 0] [true string? string?] "foo" (fn [] (+ 3 2)))))
+(comment (macroexpand '(assert1 true [0 0] [true string? string?] ['arg-form 'arg-show] (fn [] (+ 3 2)))))
 
 #?(:clj
    (defmacro assert-args
@@ -296,10 +297,10 @@
                 (if single-x? :single-x :multi-x)]
 
            [:not-in :single-x] ; (have* pred x) -> x or bool
-           `(assert1 ~bool? ~coords [~psafe? ~pform '~pshow] ~?x1 ~data-fn-form)
+           `(assert1 ~bool? ~coords [~psafe? ~pform '~pshow] [~?x1] ~data-fn-form)
 
            [:not-in :multi-x] ; (have* pred x1 x2 ...) -> [x1 x2 ...] or bool
-           (let [body (mapv (fn [x] `(assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] ~x ~gs-df)) ?xs)
+           (let [body (mapv (fn [x] `(assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] [~x] ~gs-df)) ?xs)
                  body (if bool? `(do ~@body true) body)]
              `(let [~gs-ps '~pshow
                     ~gs-pf  ~pform
@@ -311,11 +312,11 @@
              `(let [~gs-ps '~pshow
                     ~gs-pf  ~pform
                     ~gs-df  ~data-fn-form]
-                (~rfn (fn [~gs-in] (assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] ~gs-in ~gs-df)) ~?x1)))
+                (~rfn (fn [~gs-in] (assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] [~gs-in [:in ~?x1]] ~gs-df)) ~?x1)))
 
            [:in :multi-x] ; (have* pred :in xs1 xs2 ...) -> [xs1   ...] or bool
            (let [rfn  (if bool? `revery? `revery)
-                 body (mapv (fn [xs] `(~rfn (fn [~gs-in] (assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] ~gs-in ~gs-df)) ~xs)) ?xs)
+                 body (mapv (fn [xs] `(~rfn (fn [~gs-in] (assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] [~gs-in [:in ~xs]] ~gs-df)) ~xs)) ?xs)
                  body (if bool? `(do ~@body true) body)]
              `(let [~gs-ps '~pshow
                     ~gs-pf  ~pform

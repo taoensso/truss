@@ -283,7 +283,11 @@
 
       (is (throws? :common {:arg {:value 1}} (have string? :in ["a" 1])))
       (is (= [["a" "b"] ["a" "b"]]           (have string? :in ["a" "b"] ["a" "b"])))
-      (is (throws? :common {:arg {:value 1}} (have string? :in ["a" "b"] ["a" "b" 1])))])
+      (is (throws? :common {:arg {:value 1}} (have string? :in ["a" "b"] ["a" "b" 1])))
+
+      (is (throws? :common {:arg {:form [:in 'xs]}}  (let [xs  [1 2 :3]] (have integer? :in xs)))      "Sensible :arg/form (:in one)")
+      (is (throws? :common {:arg {:form [:in 'xs2]}} (let [xs1 [1 2  3]
+                                                           xs2 [1 2 :3]] (have integer? :in xs1 xs2))) "Sensible :arg/form (:in many)")])
 
    (testing "Special preds"
      [(is (= nil       (have [:or nil? string?] nil)))

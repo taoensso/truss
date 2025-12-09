@@ -2,6 +2,15 @@ This project uses [**Break Versioning**](https://www.taoensso.com/break-versioni
 
 ---
 
+# `v2.3.0` (2025-12-09)
+
+- **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.3.0)
+- **Versioning**: [Break Versioning](https://www.taoensso.com/break-versioning)
+
+This is a minor **feature release** to [add extra info](https://github.com/taoensso/truss/issues/20) to invariant violations when using `:in`. It should be a safe upgrade for users of `v2.2.x`.
+
+---
+
 # `v2.2.1` (2025-11-15)
 
 - **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.2.1)

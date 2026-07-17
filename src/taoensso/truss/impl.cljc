@@ -89,6 +89,13 @@
 ;;;; Assertion predicates
 
 #?(:clj (defn ensure-set-form [form] (if (set? form) form `(ensure-set ~form))))
+#?(:clj (def ^:private unary-special-pred-kinds
+          #{:set= :set<= :set>=
+            :ks= :ks<= :ks>= :ks-nnil?
+            :el :in :not-el :not-in
+            :n= :n>= :n<=
+            :instance? :satisfies?}))
+#?(:clj (def ^:private composition-special-pred-kinds #{:and :or :not}))
 #?(:clj (def ^:private safe-pred-forms
           (let [names
                 (mapv name
@@ -121,10 +128,18 @@
         (let [[kind a1 a2 a3]      pred-form
               num-args (dec (count pred-form))
               _
-              (when (or (< num-args 1) (> num-args 3))
-                (throw
-                  (ex-info "Truss special predicates should have 1≤n≤3 elements"
-                    {:pred-form pred-form})))
+              (cond
+                (contains? unary-special-pred-kinds kind)
+                (when-not (= num-args 1)
+                  (throw
+                    (ex-info "Truss special predicate requires exactly 1 argument"
+                      {:pred-form pred-form})))
+
+                (contains? composition-special-pred-kinds kind)
+                (when (or (< num-args 1) (> num-args 3))
+                  (throw
+                    (ex-info "Truss composition predicate requires 1≤n≤3 arguments"
+                      {:pred-form pred-form}))))
 
               gsym (or gsym (gensym "arg"))
 
@@ -271,6 +286,12 @@
            elidable?  (and elidable? (not bang?))
            elide?     (and elidable? (not *assert*))
            arg-forms  (if bang? (next arg-forms) arg-forms)
+           _
+           (when (empty? arg-forms)
+             (throw
+               (ex-info "Truss assertion requires at least one argument"
+                 {:arg-forms arg-forms})))
+
            in?        (= (second arg-forms) :in) ; (have pred :in xs1 xs2 ...)
            arg-forms  (if in? (cons (first arg-forms) (nnext arg-forms)) arg-forms)
            data-fn-form
@@ -280,6 +301,12 @@
              `(fn [] ~(last arg-forms)))
 
            arg-forms  (if data-fn-form (butlast (butlast arg-forms)) arg-forms)
+           _
+           (when (and in? (< (count arg-forms) 2))
+             (throw
+               (ex-info "Truss `:in` assertion requires at least one collection"
+                 {:arg-forms arg-forms})))
+
            auto-pred? (= (count arg-forms) 1) ; Unique common case: (have ?x)
            pred-form  (if auto-pred? `some? (first arg-forms))
            [?x1 ?xs]

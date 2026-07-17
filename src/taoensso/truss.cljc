@@ -656,6 +656,10 @@
        ;; Add arb optional info to thrown ex-data using `:data`:
        (have string? \"foo\" :data {:user-id 101}) => \"foo\"
 
+       ;; NB `:data` must follow at least one val to assert, so beware:
+       ;; `(have string? :data {...})` is the auto-pred form `(have <x> :data {...})`
+       ;; and asserts `(some? string?)` - probably not what was intended!
+
        ;; Assert inside collections using `:in`:
        (have string? :in #{\"foo\" \"bar\"}) => #{\"foo\" \"bar\"}
 

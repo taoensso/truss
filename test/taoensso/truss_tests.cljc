@@ -256,13 +256,33 @@
    (is (= (parse-pred-form pred-fn1)                                   '[false taoensso.truss-tests/pred-fn1]))
    (is (= (parse-pred-form pred-fn2)                                   '[true  taoensso.truss-tests/pred-fn2]))
    (is (= (parse-pred-form pred-macro)                                 '[false taoensso.truss-tests/pred-macro]))
-   (is (= (parse-pred-form  (fn [x] x))                                '[false (fn [x] x)]))])
+   (is (= (parse-pred-form  (fn [x] x))                                '[false (fn [x] x)]))
+
+   #?(:clj
+      [(is (throws? :common #"exactly 1 argument"
+             (macroexpand '(taoensso.truss/have [:n= 2 3] [1 2]))))
+       (is (throws? :common #"exactly 1 argument"
+             (macroexpand '(taoensso.truss/have [:n=] [1 2]))))
+       (is (throws? :common #"1≤n≤3 arguments"
+             (macroexpand '(taoensso.truss/have [:and string? seqable? coll? vector?] []))))])])
 
 ;;;; Assertions
 
 (deftest _assertions
-  [(testing "Falsey args"
-     [(is      (throws? (have       nil)))
+  [#?(:clj
+      (testing "Malformed forms"
+        [(is (throws? :common #"at least one argument"    (macroexpand '(taoensso.truss/have))))
+         (is (throws? :common #"at least one collection"  (macroexpand '(taoensso.truss/have string? :in))))
+         (is (throws? :common #"at least one collection"
+               (macroexpand '(taoensso.truss/have string? :in :data {:id :test}))))]))
+
+   (testing "Falsey args"
+     [(is (= :data (have :data)))
+      (is (= :data (have keyword? :data)))
+      (is (= [:foo :data]      (have keyword? :foo :data)))
+      (is (= [:foo :bar :data] (have keyword? :foo :bar :data)))
+      (is (= {:data "value"} (have :data {:data "value"})))
+      (is      (throws? (have       nil)))
       (is      (throws? (have?      nil)))
       (is (not (throws? (have       false))))
       (is (not (throws? (have?      false))))

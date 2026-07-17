@@ -225,9 +225,11 @@
      [bool? coords [psafe? pform pshow] [arg-form arg-show] data-fn-form]
      (let [cljs?         (:ns &env)
            [line column] coords
-           eval-arg? ; Bind composite arg forms so pred test and return/report use the same single evaluation.
-           (or       ; Symbols and literals instead remain inline (re-evaluated): identical for locals and
-                     ; literals, though a symbol naming a mutable var may observe mutation between reads.
+           local-sym?    (and (symbol? arg-form)
+                           (contains? (if cljs? (:locals &env) &env) arg-form))
+           eval-arg? ; Bind composite forms and non-local symbols so pred test and return/report
+           (or       ; use the same single evaluation. Locals and literals remain inline.
+             (and (symbol? arg-form) (not local-sym?))
              (list-form? arg-form)
              (vector?    arg-form)
              (map?       arg-form)

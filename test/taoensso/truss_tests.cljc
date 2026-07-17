@@ -290,6 +290,8 @@
 
 ;;;; Assertions
 
+#?(:clj (def ^:private mutable-assertion-arg nil))
+
 (deftest _assertions
   [#?(:clj
       (testing "Malformed forms"
@@ -357,6 +359,24 @@
       (let [n (atom 0)] [(is (throws? :common {:arg {:value [1]}}
                                   (have string? [(swap! n inc)])))               (is (= @n 1))])
       (let [n (atom 0)] [(is (throws? (have (fn [_] false) #{(swap! n inc)})))  (is (= @n 1))])])
+
+   #?(:clj
+      (testing "Var args evaluated once"
+        (let [original @#'mutable-assertion-arg]
+          (try
+            (alter-var-root #'mutable-assertion-arg (constantly :before))
+            (let [seen_  (atom nil)
+                  result
+                  (have
+                    (fn [x]
+                      (reset! seen_ x)
+                      (alter-var-root #'mutable-assertion-arg (constantly :after))
+                      true)
+                    mutable-assertion-arg)]
+              [(is (= :before @seen_ result))
+               (is (= :after mutable-assertion-arg))])
+            (finally
+              (alter-var-root #'mutable-assertion-arg (constantly original)))))))
 
    (testing "Throwing predicates"
      (let [zero! (fn [n] (if (zero? n) true (throw (ex-info "" {}))))]

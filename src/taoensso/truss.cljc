@@ -65,8 +65,8 @@
     `:submap/nx`     - Matches iff `super-map` does not contain key
     `:submap/ex`     - Matches iff `super-map` does     contain key (any     val)
     `:submap/some`   - Matches iff `super-map` does     contain key (non-nil val)
-    (fn [super-val]) - Matches iff `super-map` does     contain key, and given
-                       unary predicate returns truthy for the key's val
+    (fn [super-val]) - Matches iff given unary predicate returns truthy for
+                       `(get super-map key)`, i.e. for nil when key is absent
 
   Uses stack recursion so supports only limited nesting."
   [super-map sub-map]
@@ -82,7 +82,7 @@
               super-contains? (contains? super-map sub-key)]
           (if-let [match?
                    (if-let [pred-fn (when (fn? sub-val) sub-val)]
-                     (and super-contains? (pred-fn super-val))
+                     (pred-fn super-val) ; Nil-punned (unlike data vals, fn preds can't see key presence)
                      (case sub-val
                        :submap/nx   (not super-contains?)
                        :submap/ex        super-contains?

@@ -320,11 +320,29 @@
      (let [zero! (fn [n] (if (zero? n) true (throw (ex-info "" {}))))]
        [(is (truss/error? (ex-cause (throws :common (have zero! 1)))))
         (is (truss/error? (ex-cause (throws :common (have zero! 0 0 1 0)))))
-        (is (= [0 0 0 0]                            (have zero! 0 0 0 0)))]))
+        (is (= [0 0 0 0]                            (have zero! 0 0 0 0)))])
+
+     (let [pred  (fn [_] (throw (ex-info "Pred failed" {})))
+           info  (binding [truss/*failed-assertion-handler* identity]
+                   (have pred :truss/exception))
+           error (truss/failed-assertion-ex-info info)
+           legacy-data
+           (binding [truss/*failed-assertion-handler* (truss/legacy-error-fn force)]
+             (have pred :truss/exception))]
+       [(is (str/includes? (ex-message error) "Error evaluating pred: Pred failed"))
+        (is (= (get-in (ex-data error) [:arg :value]) :truss/exception))
+        (is (str/includes? (force (:msg_ legacy-data)) "Error evaluating pred: Pred failed"))])
+
+     (let [info (binding [truss/*failed-assertion-handler* identity]
+                  (have string? :truss/exception))]
+       [(is (nil? (:error info)))
+        (is (= (get-in (ex-data (truss/failed-assertion-ex-info info)) [:arg :value])
+              :truss/exception))]))
 
    (testing "Throwing args"
      (let [result (throws :common (have string? (throw (ex-info "" {}))))]
        [(is (truss/error?           (ex-cause result)))
+        (is (str/includes?          (ex-message result) "Error evaluating arg:"))
         (is (= :truss/exception (-> (ex-data  result) :arg :value)))]))
 
    (testing "Throwing data"
@@ -391,6 +409,26 @@
 
    (testing "Failed assertion handler"
      [(is (= :my-kw (binding [truss/*failed-assertion-handler* nil]      (have string? :my-kw))))
+      (let [error (ex-info "Arg eval failed" {})]
+        [(is (identical? error
+               (throws (binding [truss/*failed-assertion-handler* nil]
+                         (have string? (throw error))))))
+         (is (identical? error
+               (throws (binding [truss/*failed-assertion-handler* nil]
+                         (have (fn [x] (string? x)) (throw error))))))
+
+         (let [next-evaluated?_ (atom false)]
+           [(is (identical? error
+                  (throws (binding [truss/*failed-assertion-handler* nil]
+                            (have string?
+                              (throw error)
+                              (do (reset! next-evaluated?_ true) "next"))))))
+            (is (false? @next-evaluated?_))])])
+
+      (let [pred-error (ex-info "Pred failed" {})]
+        (is (= :arg
+              (binding [truss/*failed-assertion-handler* nil]
+                (have (fn [_] (throw pred-error)) :arg)))))
       (is (submap?  (binding [truss/*failed-assertion-handler* identity] (have string? :my-kw :data {:a :A, :b :B}))
             {;; :inst #?(:clj #(instance? java.time.Instant %), :cljs #(instance? js/Date %))
              :ns      "taoensso.truss-tests"

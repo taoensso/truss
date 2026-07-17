@@ -531,6 +531,12 @@
 
 (def ^:private sys-newline #?(:cljs "\n" :clj (System/getProperty "line.separator")))
 
+(defn- failed-assertion-arg-eval-error? [failed-assertion-info]
+  (let [info-meta (meta failed-assertion-info)]
+    (if (contains? info-meta ::arg-eval-error?)
+      (get info-meta ::arg-eval-error?)
+      (impl/identical-kw? (:arg-val failed-assertion-info) :truss/exception)))) ; Back compatibility
+
 (let [legacy-ex-data? (impl/legacy-assertion-ex-data?)]
 
   (defn failed-assertion-ex-info
@@ -538,7 +544,7 @@
     ([                failed-assertion-info] (failed-assertion-ex-info legacy-ex-data? failed-assertion-info))
     ([legacy-ex-data? failed-assertion-info]
      (let [{:keys [inst ns coords, pred arg-form arg-val, data error]} failed-assertion-info
-           undefined-arg? (impl/identical-kw? arg-val :truss/exception)
+           arg-eval-error? (failed-assertion-arg-eval-error? failed-assertion-info)
 
            coords-str ; Faster (str coords)
            (when-let [[line column] coords]
@@ -550,7 +556,7 @@
            msg
            (if error
              (let [error-msg (ex-message error)]
-               (if undefined-arg?
+               (if arg-eval-error?
                  (str msg sys-newline "Error evaluating arg: "  error-msg)
                  (str msg sys-newline "Error evaluating pred: " error-msg)))
              msg)]
@@ -568,7 +574,7 @@
             :arg
             {:form  arg-form
              :value arg-val
-             :type  (if undefined-arg? :truss/exception (type arg-val))}}
+             :type  (if arg-eval-error? :truss/exception (type arg-val))}}
 
            (impl/assoc-some
              {:inst   (impl/now-inst*)
@@ -577,7 +583,7 @@
               :arg
               {:form  arg-form
                :value arg-val
-               :type  (if undefined-arg? :truss/exception (type arg-val))}}
+               :type  (if arg-eval-error? :truss/exception (type arg-val))}}
              {:coords coords
               :data   data}))
 
@@ -613,20 +619,24 @@
 (defn ^:no-doc failed-assertion!
   "Private, don't use."
   [ns line column, pred arg-form arg-val, data-fn error]
-  (if-let [;; Not accessible from impl ns in Cljs
-           handler *failed-assertion-handler*]
-    (handler
-      (let [undefined-arg? (instance? ArgEvalError arg-val)]
-        (FailedAssertionInfo. ns
-          (when line (if column [line column] [line]))
-          pred arg-form
-          (if undefined-arg? :truss/exception arg-val)
-          (when-let [df data-fn] (impl/catching (df) _ :truss/exception))
-          (cond
-            (identical? error impl/FalsePredError) nil
-            undefined-arg? (.-ex ^ArgEvalError error)
-            :else                              error))))
-    arg-val))
+  (let [arg-eval-error? (instance? ArgEvalError arg-val)]
+    (if-let [;; Not accessible from impl ns in Cljs
+             handler *failed-assertion-handler*]
+      (handler
+        (with-meta
+          (FailedAssertionInfo. ns
+            (when line (if column [line column] [line]))
+            pred arg-form
+            (if arg-eval-error? :truss/exception arg-val)
+            (when-let [df data-fn] (impl/catching (df) _ :truss/exception))
+            (cond
+              (identical? error impl/FalsePredError) nil
+              arg-eval-error? (.-ex ^ArgEvalError error)
+              :else                                  error))
+          {::arg-eval-error? arg-eval-error?}))
+      (if arg-eval-error?
+        (throw (.-ex ^ArgEvalError arg-val))
+        arg-val))))
 
 #?(:clj
    (defmacro have
@@ -698,6 +708,7 @@
         (delay
           (let [{:keys [ns coords, pred arg-form arg-val, data error]} failed-assertion-info
                 [line column] coords
+                arg-eval-error? (failed-assertion-arg-eval-error? failed-assertion-info)
                 msg_
                 (delay
                   (let [msg
@@ -707,7 +718,7 @@
 
                     (if error
                       (let [error-msg (ex-message error)]
-                        (if (impl/identical-kw? arg-val :truss/exception)
+                        (if arg-eval-error?
                           (str msg sys-newline sys-newline "Error evaluating arg: "  error-msg)
                           (str msg sys-newline sys-newline "Error evaluating pred: " error-msg)))
                       msg)))]

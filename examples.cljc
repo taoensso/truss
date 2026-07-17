@@ -13,36 +13,36 @@
 
 (square 5)   ; => 25
 (square nil) ; =>
-;; Truss assertion failed at truss-examples[15 11]:
+;; Truss assertion failed at truss-examples[12,26]:
 ;; (clojure.core/integer? n)
-;; {:inst   #inst "2025-02-21T14:17:55.143432000-00:00",
+;; {:inst   #object[java.time.Instant ...],
 ;;  :ns     "truss-examples",
 ;;  :pred   clojure.core/integer?,
 ;;  :arg    {:form n, :value nil, :type nil},
-;;  :coords [15 11]}
+;;  :coords [12 26]}
 
 ;; Truss provides ex-cause info when relevant:
 (have string? (/ 1 0)) ; =>
-;; Truss assertion failed at truss-examples[29 1]:
+;; Truss assertion failed at truss-examples[25,1]:
 ;; (clojure.core/string? (/ 1 0))
 ;; Error evaluating arg: Divide by zero
-;; {:inst #inst "2025-02-21T14:19:36.798972000-00:00",
+;; {:inst #object[java.time.Instant ...],
 ;;  :ns "truss-examples",
 ;;  :pred clojure.core/string?,
 ;;  :arg
 ;;  {:form (/ 1 0), :value :truss/exception, :type :truss/exception},
-;;  :coords [29 1]}
+;;  :coords [25 1]}
 
-;; Assert multipe args at once:
+;; Assert multiple args at once:
 (let [[x y z] (have string? "foo" "bar" "baz")] (str x y z)) ; => "foobarbaz"
 (let [[x y z] (have string? "foo" 42    "baz")] (str x y z)) ; =>
-;; Truss assertion failed at truss-examples[41 15]:
+;; Truss assertion failed at truss-examples[38,15]:
 ;; (clojure.core/string? 42)
-;; {:inst #inst "2025-02-21T15:14:06.216906000-00:00",
+;; {:inst #object[java.time.Instant ...],
 ;;  :ns "truss-examples",
 ;;  :pred clojure.core/string?,
 ;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :coords [41 15]}
+;;  :coords [38 15]}
 
 ;; Attach arb data to exceptions:
 
@@ -51,13 +51,13 @@
     (* x y)))
 
 (my-ring-handler {:foo :bar} 5 nil) ; =>
-;; Truss assertion failed at truss-examples[52 15]:
+;; Truss assertion failed at truss-examples[50,15]:
 ;; (clojure.core/integer? y)
-;; {:inst #inst "2025-02-21T15:15:03.081041000-00:00",
+;; {:inst #object[java.time.Instant ...],
 ;;  :ns "truss-examples",
 ;;  :pred clojure.core/integer?,
 ;;  :arg {:form y, :value nil, :type nil},
-;;  :coords [52 15],
+;;  :coords [50 15],
 ;;  :data {:ring-req {:foo :bar}}}
 
 ;; Attach arb context to exceptions:
@@ -77,13 +77,13 @@
 (def wrapped-ring-handler (wrap-ring-ctx ring-handler))
 
 (wrapped-ring-handler {:method :get :uri "/" :session {:user-id 101}}) ; =>
-;; Truss assertion failed at truss-examples[72 3]:
-;; (#function[clojure.core/string?--5494] 42)
-;; {:inst #inst "2025-02-21T15:19:07.136882000-00:00",
+;; Truss assertion failed at truss-examples[74,3]:
+;; (clojure.core/string? 42)
+;; {:inst #object[java.time.Instant ...],
 ;;  :ns "truss-examples",
-;;  :pred #function[clojure.core/string?--5494],
+;;  :pred clojure.core/string?,
 ;;  :arg {:form 42, :value 42, :type java.lang.Long},
-;;  :coords [72 3],
+;;  :coords [74 3],
 ;;  :truss/ctx {:method :get, :uri "/", :session {:user-id 101}}}
 
 ;; Assert within data structures, compare:
@@ -144,7 +144,7 @@
 (have-person {:name "Steve" :age  33})  ; => {:name "Steve", :age 33}
 (have-person {:name "Alice" :age "33"}) ; => Throws
 
-;; Assert whithout without elision (ignore `*assert*`):
+;; Assert without elision (ignore `*assert*`):
 
 (defn get-restricted-resource [ring-session]
   ;; This is an important security check so we'll use `have!` instead

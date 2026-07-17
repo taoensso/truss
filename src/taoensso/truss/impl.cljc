@@ -217,7 +217,7 @@
 
 ;; User-facing record provided to `*failed-assertion-handler*`
 (defrecord FailedAssertionInfo [ns coords, pred arg-form arg-val, data error])
-(deftype ArgEvalError [ex]) ; Private wrapper type to identiy exceptions evaluating args or executing (pred arg) checks
+(deftype ArgEvalError [ex]) ; Private wrapper type to identify exceptions evaluating args or executing (pred arg) checks
 (def   FalsePredError #?(:clj (Object.) :cljs (js-obj))) ; Private object to identify falsey (pred arg) checks
 
 #?(:clj

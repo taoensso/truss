@@ -145,8 +145,8 @@ Some of the variables to consider might include:
 
 To make a useful comparison, ultimately one might want some kind of `relevant-power ÷ relevant-cost`, relative to some specific context and objectives.
 
-For my part, I'm really pleased with the balance of particular trade-offs that Truss assertions offers. As of 2025, Truss assertions continue to be my preferred/default choice for a wide variety of common cases in projects large and small.
+For my part, I'm really pleased with the balance of particular trade-offs that Truss assertions offers. Truss assertions continue to be my preferred/default choice for a wide variety of common cases in projects large and small.
 
-The best general recommendation I can make is to try actually experiment with the options that seem appealing to you. Nothing beats hands-on experience for deciding what best fits your particular needs and tastes.
+The best general recommendation I can make is to try actually experimenting with the options that seem appealing to you. Nothing beats hands-on experience for deciding what best fits your particular needs and tastes.
 
 See [here](../wiki#motivation) for some of the specific objectives I had for Truss assertions.

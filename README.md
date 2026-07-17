@@ -11,7 +11,7 @@
 
 **Truss** is a lightweight, dependency-free library for Clojure and ClojureScript that offers a small set of high-value utils and patterns that I've honed over the years to help tame Clojure's famously impenetrable error messages.
 
-It works great with [Telemere](https://www.taoensso.com/telemere) and [Tufte](https://www.taoensso.com/tufte), and includes practical tools for [inline assertions](#inline-assertions), [contextual exceptions](#contextual-exceptions), [cross-platform exceptions](cross-platform-exceptions), [testing exceptions](#testing-exceptions), and [more](#misc-utils).
+It works great with [Telemere](https://www.taoensso.com/telemere) and [Tufte](https://www.taoensso.com/tufte), and includes practical tools for [inline assertions](#inline-assertions), [contextual exceptions](#contextual-exceptions), [cross-platform exceptions](#cross-platform-exceptions), [testing exceptions](#testing-exceptions), and [more](#misc-utils).
 
 <img width="640" src="../../blob/master/hero.png" alt="Egyptian ship with rope truss, the oldest known use of trusses (about 1250 BC)."/>
 
@@ -66,7 +66,7 @@ Examples:
 (have nil)   ; => Throws detailed exception
 
 ;; Add arb optional info to thrown ex-data using `:data`:
-(have string? "foo" :data {:user-id 101}) => "foo"
+(have string? "foo" :data {:user-id 101}) ; => "foo"
 
 ;; Assert inside collections using `:in`:
 (have string? :in #{"foo" "bar"}) ; => #{"foo" "bar"}
@@ -79,15 +79,15 @@ Examples:
 
 ;; An example exception:
 (have string? (/ 1 0)) ; =>
-;; Truss assertion failed at truss-examples[29 1]:
+;; Truss assertion failed at truss-examples[25,1]:
 ;; (clojure.core/string? (/ 1 0))
 ;; Error evaluating arg: Divide by zero
-;; {:inst #inst "2025-02-21T14:19:36.798972000-00:00",
+;; {:inst #object[java.time.Instant ...],
 ;;  :ns "truss-examples",
 ;;  :pred clojure.core/string?,
 ;;  :arg
 ;;  {:form (/ 1 0), :value :truss/exception, :type :truss/exception},
-;;  :coords [29 1]}
+;;  :coords [25 1]}
 ```
 
 See [examples.cljc](../../blob/master/examples.cljc) or [YouTube demo](https://www.youtube.com/watch?v=gMB4Y-EIArA) for more.
@@ -122,7 +122,7 @@ See also [`truss/ex-info!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/
 
 Catching exceptions in cross-platform Clojure/Script code can be needlessly tedious. Truss provides a couple utils to make this easier:
 
-- [`catching`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching) just swallow exceptions: `(catching (my-code))`.
+- [`catching`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching) just swallows exceptions: `(catching (my-code))`.
 - [`try*`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#try*) is like `core/try` but can catch special classes: `:ex-info`, `:common`, `:all`, `:default`. See docstring for details.
 
 A cross-platform [`error?`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#error?) predicate is also provided.
@@ -134,7 +134,7 @@ Writing unit tests that need to check for specific exception types, messages, an
 Example:
 
 ```clojure
-(is (throws? :any "Divide by zero" (/ 1 0))) => true
+(is (throws? :any "Divide by zero" (/ 1 0))) ; => true
 (is (throws? :ex-info {:user-name :stu, :user-id pos-int?} ...))
 ```
 
@@ -143,7 +143,7 @@ Example:
 
 ## Misc utils
 
-- Clojure's transducers are awesome, but can be an absolute pita to debug. See [`catching-xform`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching-xform) for a util this _far_ easier. [`catching-rf`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching-rf) is likewise available for regular reducing fns.
+- Clojure's transducers are awesome, but can be an absolute pita to debug. See [`catching-xform`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching-xform) for a util that makes this _far_ easier. [`catching-rf`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#catching-rf) is likewise available for regular reducing fns.
 - [`unexpected-arg!`](https://cljdoc.org/d/com.taoensso/truss/CURRENT/api/taoensso.truss#unexpected-arg!) provides an easy (if somewhat verbose) way to reject an argument with a clear error message. I'm increasingly using this in my own [open source libraries](https://www.taoensso.com/clojure) to make common user errors easier to debug.
 
 ## Documentation
@@ -158,7 +158,7 @@ You can [help support][sponsor] continued work on this project and [others][my w
 
 ## License
 
-Copyright &copy; 2014-2025 [Peter Taoussanis][].  
+Copyright &copy; 2014-2026 [Peter Taoussanis][].
 Licensed under [EPL 1.0](LICENSE.txt) (same as Clojure).
 
 <!-- Common -->

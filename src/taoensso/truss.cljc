@@ -134,7 +134,7 @@
      "Macro version of `core/ex-info` that adds extra keys to ex-info's data map:
        `:truss/ctx` -- Value of dynamic `truss/*ctx*` when ex-info created
        `:ns` --------- Namespace string of ex-info callsite
-       `:coords` ----- [line number]    of ex-info callsite, only present
+       `:coords` ----- [line column]    of ex-info callsite, only present
                        if ex-info isn't wrapped by another macro (or see
                       `keep-callsite` for a workaround).
 
@@ -166,7 +166,7 @@
        (my-function :invalid-mode) => throws
          Unexpected argument: :invalid-mode
          {:param 'mode,
-          :arg {:value :unexpected, :type clojure.lang.Keyword},
+          :arg {:value :invalid-mode, :type clojure.lang.Keyword},
           :context 'my-ns/my-function,
           :expected #{:read :write}
           ...}"
@@ -658,7 +658,7 @@
    (defmacro have
      "Main Truss assertion util.
      Takes a (fn pred [x]) => truthy, and >=1 vals.
-     Tests pred against each val,trapping errors.
+     Tests pred against each val, trapping errors.
 
      If any pred test fails, throws a detailed `truss/ex-info`.
      Otherwise returns input val/s for convenient inline-use/binding.
@@ -710,7 +710,7 @@
      "Truss assertion util.
      Returns `true` (rather than given arg value) on success, and ignores
      `*assert*` value (so will never be elided).
-  
+
      **WARNING**: do NOT use in `:pre`/`:post` conditions since those ALWAYS
      respect `*assert*`, contradicting the intention of the bang (`!`) here."
      {:arglists '([x] [pred (:in) x] [pred (:in) x & more-xs])}

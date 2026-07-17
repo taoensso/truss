@@ -111,8 +111,8 @@
   (let [data-map
         (cond
           (nil? ns)                               data-map
-          coords   (conj {:ns ns, :coords coords} data-map)
-          :else    (conj {:ns ns}                 data-map))
+          coords   (assoc data-map :ns ns, :coords coords)
+          :else    (assoc data-map :ns ns))
 
         data-map
         (if-let [ctx *ctx*]
@@ -136,7 +136,9 @@
        `:ns` --------- Namespace string of ex-info callsite
        `:coords` ----- [line number]    of ex-info callsite, only present
                        if ex-info isn't wrapped by another macro (or see
-                      `keep-callsite` for a workaround)."
+                      `keep-callsite` for a workaround).
+
+     These generated keys take precedence over keys in the given data map."
      ([msg               ] `(ex-info* ~(str *ns*) ~(callsite-coords &form) ~msg nil       nil))
      ([msg data-map      ] `(ex-info* ~(str *ns*) ~(callsite-coords &form) ~msg ~data-map nil))
      ([msg data-map cause] `(ex-info* ~(str *ns*) ~(callsite-coords &form) ~msg ~data-map ~cause))))

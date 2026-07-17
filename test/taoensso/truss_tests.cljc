@@ -190,6 +190,18 @@
 
 (deftest _ex-info
   [(is (submap? (ex-data (truss/ex-info "msg")) {:ns string?, :coords vector?}))
+   (is (= :given (-> (truss/ex-info "msg" {:truss/ctx :given}) ex-data :truss/ctx)))
+   (is (submap?
+         (ex-data
+           (truss/with-ctx {:actual :ctx}
+             (truss/ex-info "msg" {:ns :given, :coords :given, :truss/ctx :given})))
+         {:ns string?, :coords vector?, :truss/ctx {:actual :ctx}}))
+   (is (submap?
+         (ex-data
+           (truss/with-ctx {:actual :ctx}
+             (throws
+               (truss/ex-info! "msg" {:ns :given, :coords :given, :truss/ctx :given}))))
+         {:ns string?, :coords vector?, :truss/ctx {:actual :ctx}}))
    (is (submap? (ex-data (truss/with-ctx {:c :c1} (truss/ex-info "msg")))          {:truss/ctx {:c :c1}}))
    (is (submap? (ex-data (truss/with-ctx {:c :c1} (truss/ex-info "msg" {:d :d1}))) {:truss/ctx {:c :c1}, :d :d1}))
    (is (submap? (ex-data

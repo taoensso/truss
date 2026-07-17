@@ -354,7 +354,7 @@
                              (throw
                                (ex-info "Unexpected Truss `try*` catch clause keyword"
                                  {:given    {:value s2, :type (type s2)}
-                                  :expected '#{:ex-info :common :all :default}})))]
+                                  :expected '#{:ex-info :common :all :any :default :all-but-critical}})))]
 
                        (if rethrow-critical?
                          `(catch ~s2 ~s3 (throw-critical ~s3) ~@more)
@@ -545,7 +545,7 @@
     "Returns an appropriate `truss/ex-info` for given failed assertion info map."
     ([                failed-assertion-info] (failed-assertion-ex-info legacy-ex-data? failed-assertion-info))
     ([legacy-ex-data? failed-assertion-info]
-     (let [{:keys [inst ns coords, pred arg-form arg-val, data error]} failed-assertion-info
+     (let [{:keys [ns coords, pred arg-form arg-val, data error]} failed-assertion-info
            arg-eval-error? (failed-assertion-arg-eval-error? failed-assertion-info)
 
            coords-str ; Faster (str coords)

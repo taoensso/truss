@@ -19,6 +19,19 @@
 
 ;;;; Error utils
 
+(deftest _submap?
+  [(is      (submap? {}       {:a :submap/nx}))
+   (is (not (submap? {:a nil} {:a :submap/nx})))
+   (is      (submap? {:a nil} {:a :submap/ex}))
+   (is (not (submap? {}       {:a :submap/ex})))
+   (is      (submap? {:a :A}  {:a :submap/some}))
+   (is (not (submap? {:a nil} {:a :submap/some})))
+   (is (not (submap? {}       {:a :submap/some})))
+   (is (not (submap? {}       {:a some?})))
+   (is (not (submap? {}       {:a :taoensso.truss/nx})))
+   (is      (submap? {:a :taoensso.truss/nx} {:a :taoensso.truss/nx}))
+   (is      (submap? {:a :taoensso.truss/nx} {:a :submap/ex}))])
+
 (def  ex1 (ex-info "Ex1" {}))
 (defn ex1!   [   ] (throw ex1))
 (defn throw! [arg] (throw (ex-info "TestEx" {:arg {:value arg :type (type arg)}})))

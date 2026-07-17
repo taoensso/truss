@@ -484,7 +484,7 @@
 
   (defn catching-rf
     "Returns wrapper around given reducing function `rf` so that if `rf`
-    throws, (error-fn <thrown-error> <contextual-data>) will be called.
+    throws, (error-fn <contextual-data> <thrown-error>) will be called.
 
     The default `error-fn` will rethrow the original error, wrapped in
     extra contextual information to aid debugging.

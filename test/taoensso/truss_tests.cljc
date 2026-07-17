@@ -173,7 +173,17 @@
 
    (is (=   (reduce-kv (truss/catching-rf (fn [acc k v] (assoc acc k         v)))  {} {:a :A}) {:a :A}))
    (is (->> (reduce-kv (truss/catching-rf (fn [acc k v] (assoc acc k (throw! v)))) {} {:a :A})
-         (throws? :common {:call '(rf acc k v) :args {:k {:value :a} :v {:value :A}}})))])
+         (throws? :common {:call '(rf acc k v) :args {:k {:value :a} :v {:value :A}}})))
+
+   (let [error  (ex-info "Test" {})
+         result
+         ((truss/catching-rf
+            (fn [data cause] [data cause])
+            (fn [_ _] (throw error)))
+           :acc :in)]
+     [(is (submap? (first result) {:rf fn?, :call '(rf acc in)
+                                   :args {:acc {:value :acc} :in {:value :in}}}))
+      (is (identical? (second result) error))])])
 
 (deftest _catching-xform
   [(is (=   (transduce (truss/catching-xform (map identity)) (completing (fn [acc in] (conj acc in))) [] [:a :b]) [:a :b]))

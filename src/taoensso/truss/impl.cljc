@@ -236,7 +236,11 @@
 
            gs-error   (gensym "error")
            gs-arg-val (gensym "arg-val")
-           arg-show   (or arg-show arg-form)]
+           arg-show   (or arg-show arg-form)
+
+           fail-form ; Mirror elision semantics when `*failed-assertion-handler*` doesn't throw:
+           (fn [form] ; bool assertions promise a boolean, so return true (as if elided)
+             (if bool? `(do ~form true) form))]
 
        (case [(if eval-arg? :eval-arg  :local-arg)
               (if psafe?    :safe-pred :unsafe-pred)]
@@ -244,12 +248,12 @@
          [:local-arg :safe-pred]
          `(if (~pform ~arg-form)
             ~(if bool? true arg-form)
-            (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~arg-form ~data-fn-form nil))
+            ~(fail-form `(taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~arg-form ~data-fn-form nil)))
 
          [:local-arg :unsafe-pred]
          `(let [~gs-error (catching (if (~pform ~arg-form) nil FalsePredError) ~'e ~'e)]
             (if ~gs-error
-              (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~arg-form ~data-fn-form ~gs-error)
+              ~(fail-form `(taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~arg-form ~data-fn-form ~gs-error))
               ~(if bool? true arg-form)))
 
          [:eval-arg :safe-pred]
@@ -260,7 +264,7 @@
                   (if (~pform ~gs-arg-val) nil FalsePredError))]
 
             (if ~gs-error
-              (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~gs-arg-val ~data-fn-form ~gs-error)
+              ~(fail-form `(taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~gs-arg-val ~data-fn-form ~gs-error))
               ~(if bool? true gs-arg-val)))
 
          [:eval-arg :unsafe-pred]
@@ -273,7 +277,7 @@
                     ~'e ~'e))]
 
             (if ~gs-error
-              (taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~gs-arg-val ~data-fn-form ~gs-error)
+              ~(fail-form `(taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~gs-arg-val ~data-fn-form ~gs-error))
               ~(if bool? true gs-arg-val)))))))
 
 (comment (macroexpand '(assert1 true [0 0] [true string? string?] ['arg-form 'arg-show] (fn [] (+ 3 2)))))

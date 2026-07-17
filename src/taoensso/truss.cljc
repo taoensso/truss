@@ -596,6 +596,20 @@
   Will by default throw an appropriate `truss/ex-info`.
   This is a decent place to inject logging for assertion failures, etc.
 
+  If the handler returns normally, or is bound to nil (to disable handling),
+  failed assertions mirror elision semantics:
+
+    `have?`/`have!?` return true, and
+    `have` /`have!`  return the handler's result in place of the failing arg
+                     (useful for fallback vals, etc.), or the arg itself when
+                     handling is disabled. NB `:in` assertions always return
+                     the original collection/s.
+
+  NB when handling is disabled, errors thrown during argument evaluation are
+  still rethrown (never silently swallowed). Custom handlers instead receive
+  such errors (identified by `:arg-val` = `:truss/exception`) and may rethrow
+  or swallow them as desired.
+
   Arg given to handler is a map with keys:
 
   `:ns` ----------- ?str namespace of assertion callsite

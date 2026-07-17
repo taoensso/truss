@@ -455,6 +455,38 @@
         (is (= :arg
               (binding [truss/*failed-assertion-handler* nil]
                 (have (fn [_] (throw pred-error)) :arg)))))
+
+      (testing "Non-throwing handler mirrors elision for bool assertions"
+        [(is (true? (binding [truss/*failed-assertion-handler* nil] (have?  string?        5))))
+         (is (true? (binding [truss/*failed-assertion-handler* nil] (have!? string?        5))))
+         (is (true? (binding [truss/*failed-assertion-handler* nil] (have?  (fn [_] false) 5)))       "Unsafe pred branch")
+         (is (true? (binding [truss/*failed-assertion-handler* nil] (have?  string?        (+ 2 3)))) "Eval'd arg branch")
+         (is (true? (binding [truss/*failed-assertion-handler* nil] (have?  (fn [_] false) (+ 2 3)))) "Eval'd arg, unsafe pred branch")
+         (is (true? (binding [truss/*failed-assertion-handler* nil] (have?  string? 5 6))))
+         (is (true? (binding [truss/*failed-assertion-handler* nil] (have?  string? :in [5 6]))))
+         (is (nil?
+               (binding [truss/*failed-assertion-handler* nil]
+                 ((fn [x] {:pre [(have? string? x)]} x) nil)))
+           "Disabled handler can't trip `:pre`/`:post` conditions, even on falsey args")
+
+         (is (true? (binding [truss/*failed-assertion-handler* (fn [_] :handled)] (have? string? 5)))
+           "`have?` keeps boolean contract with non-throwing custom handler")
+
+         (is (= :fallback (binding [truss/*failed-assertion-handler* (fn [_] :fallback)] (have string? 5)))
+           "`have` returns non-throwing custom handler's result")
+
+         (is (= [5 6] (binding [truss/*failed-assertion-handler* (fn [_] :fallback)] (have string? :in [5 6])))
+           "`:in` always returns original collection, discarding handler results")
+
+         (let [error (ex-info "Arg eval failed" {})]
+           [(is (identical? error
+                  (throws (binding [truss/*failed-assertion-handler* nil]
+                            (have? string? (throw error)))))
+              "Disabled handler always rethrows arg eval errors")
+
+            (is (true? (binding [truss/*failed-assertion-handler* (fn [_] :handled)]
+                         (have? string? (throw error))))
+              "Custom handler receives arg eval errors, may swallow by returning")])])
       (is (submap?  (binding [truss/*failed-assertion-handler* identity] (have string? :my-kw :data {:a :A, :b :B}))
             {;; :inst #?(:clj #(instance? java.time.Instant %), :cljs #(instance? js/Date %))
              :ns      "taoensso.truss-tests"

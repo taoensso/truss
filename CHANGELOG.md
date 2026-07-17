@@ -2,6 +2,40 @@ This project uses [**Break Versioning**](https://www.taoensso.com/break-versioni
 
 ---
 
+# `v2.4.0` (2026-07-17)
+
+- **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.4.0)
+- **Versioning**: [Break Versioning](https://www.taoensso.com/break-versioning)
+
+This is a minor **feature and maintenance release** focused on more predictable error matching, assertion behaviour, and diagnostics. It should be a safe upgrade for all typical users of `v2.3.x`. Please see the linked commit messages below for details.
+
+## Minor behaviour changes
+
+- `matching-error`'s 2-arity now also matches nested causes (a loosening; some previously non-matching calls may now match).
+- New compile-time validation turns previously-compiling malformed assertions like `(have [:n= 2 3] x)` into compile errors.
+
+## Since v2.3.0 (2025-12-09)
+
+- \[fix] `matching-error`: fix edge semantics [eaea16d](https://github.com/taoensso/truss/commit/eaea16d)
+- \[fix] Submap: match present non-nil keys [83f0b4b](https://github.com/taoensso/truss/commit/83f0b4b)
+- \[fix] Submap: nil-pun fn pred vals [e02609a](https://github.com/taoensso/truss/commit/e02609a)
+- \[fix] Assertions: eval args once [c3a3928](https://github.com/taoensso/truss/commit/c3a3928)
+- \[fix] Assertions: eval Var args once [3e7c603](https://github.com/taoensso/truss/commit/3e7c603)
+- \[fix] Assertions: eval reader-literal args once [81d7f9f](https://github.com/taoensso/truss/commit/81d7f9f)
+- \[fix] Assertions: preserve eval errors [5ac0a96](https://github.com/taoensso/truss/commit/5ac0a96)
+- \[fix] Assertions: preserve falsey `:in` vals [191621e](https://github.com/taoensso/truss/commit/191621e)
+- \[fix] Assertions: align disabled handler with elision [65941d6](https://github.com/taoensso/truss/commit/65941d6)
+- \[new] Assertions: validate forms [c44d0fe](https://github.com/taoensso/truss/commit/c44d0fe)
+- \[fix] `ex-info`: preserve generated data [65d8f17](https://github.com/taoensso/truss/commit/65d8f17)
+- \[fix] `ex-info`: support data maps of arb type/keys [804e2ae](https://github.com/taoensso/truss/commit/804e2ae)
+- \[fix] `catching-rf`: correct handler docs [a2c9412](https://github.com/taoensso/truss/commit/a2c9412)
+- \[fix] Public docs: correct stale details [0625dbc](https://github.com/taoensso/truss/commit/0625dbc)
+- \[doc] Assertions: clarify `:in` coll eval error semantics [2fd6c11](https://github.com/taoensso/truss/commit/2fd6c11)
+- \[new] Clojure tests: add v1.13 [81da76a](https://github.com/taoensso/truss/commit/81da76a)
+- \[nop] GitHub CI: update workflows [79a819a](https://github.com/taoensso/truss/commit/79a819a), bump deps [5e14c94](https://github.com/taoensso/truss/commit/5e14c94), housekeeping [0c2131f](https://github.com/taoensso/truss/commit/0c2131f)
+
+---
+
 # `v2.3.0` (2025-12-09)
 
 - **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.3.0)

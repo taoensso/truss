@@ -227,13 +227,16 @@
            [line column] coords
            local-sym?    (and (symbol? arg-form)
                            (contains? (if cljs? (:locals &env) &env) arg-form))
-           eval-arg? ; Bind composite forms and non-local symbols so pred test and return/report
-           (or       ; use the same single evaluation. Locals and literals remain inline.
-             (and (symbol? arg-form) (not local-sym?))
-             (list-form? arg-form)
-             (vector?    arg-form)
-             (map?       arg-form)
-             (set?       arg-form))
+           eval-arg? ; Bind all non-trivial arg forms (incl. reader literals like #inst,
+           (not      ; #js, etc.) so pred test and return/report use the same single
+             (or     ; evaluation. Locals and self-evaluating literals remain inline.
+               local-sym?
+               (nil?     arg-form)
+               (string?  arg-form)
+               (keyword? arg-form)
+               (number?  arg-form)
+               (boolean? arg-form)
+               (char?    arg-form)))
            ns            (str *ns*)
 
            gs-error   (gensym "error")

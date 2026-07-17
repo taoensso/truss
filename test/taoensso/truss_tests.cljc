@@ -367,7 +367,19 @@
       (let [n (atom 0)] [(is (= (have #(map? %) {:n (swap! n inc)}) {:n 1}))    (is (= @n 1))])
       (let [n (atom 0)] [(is (throws? :common {:arg {:value [1]}}
                                   (have string? [(swap! n inc)])))               (is (= @n 1))])
-      (let [n (atom 0)] [(is (throws? (have (fn [_] false) #{(swap! n inc)})))  (is (= @n 1))])])
+      (let [n (atom 0)] [(is (throws? (have (fn [_] false) #{(swap! n inc)})))  (is (= @n 1))])
+
+      #?(:cljs
+         (let [n (atom 0)
+               out (have (fn [_] true) #js [(swap! n inc)])]
+           [(is (= @n 1) "#js literal args evaluated once")
+            (is (= (aget out 0) 1))]))])
+
+   (testing "Reader literal args evaluated once"
+     [(let [seen_ (atom nil) out (have (fn [x] (reset! seen_ x) true) #inst "2020-01-01")]
+        (is (identical? @seen_ out)))
+      (let [seen_ (atom nil) out (have (fn [x] (reset! seen_ x) true) #"re")]
+        (is (identical? @seen_ out)))])
 
    #?(:clj
       (testing "Var args evaluated once"

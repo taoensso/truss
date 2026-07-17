@@ -12,10 +12,10 @@
 
   :profiles
   {;; :default [:base :system :user :provided :dev]
-   :provided {:dependencies [[org.clojure/clojurescript "1.12.134"]
-                             [org.clojure/clojure       "1.11.4"]]}
+   :provided {:dependencies [[org.clojure/clojurescript "1.12.145"]
+                             [org.clojure/clojure       "1.12.5"]]}
    :c1.13    {:dependencies [[org.clojure/clojure       "1.13.0-alpha4"]]}
-   :c1.12    {:dependencies [[org.clojure/clojure       "1.12.3"]]}
+   :c1.12    {:dependencies [[org.clojure/clojure       "1.12.5"]]}
    :c1.11    {:dependencies [[org.clojure/clojure       "1.11.4"]]}
    :c1.10    {:dependencies [[org.clojure/clojure       "1.10.3"]]}
 
@@ -26,7 +26,7 @@
     :uberjar-name "graal-tests.jar"
     :dependencies
     [[org.clojure/clojure                  "1.11.4"]
-     [com.github.clj-easy/graal-build-time "1.0.5"]]}
+     [com.github.clj-easy/graal-build-time "1.0.6"]]}
 
    :dev
    {:jvm-opts ["-server" "-Dtaoensso.elide-deprecated=true"]
@@ -36,13 +36,13 @@
      *unchecked-math*     false #_:warn-on-boxed}
 
     :dependencies
-    [[org.clojure/test.check    "1.1.2"]
-     [com.taoensso/encore       "3.158.0"
+    [[org.clojure/test.check    "1.1.3"]
+     [com.taoensso/encore       "3.168.0"
       :exclusions [com.taoensso/truss]]]
 
     :plugins
     [[lein-pprint    "1.3.2"]
-     [lein-ancient   "0.7.0"]
+     [lein-ancient   "1.0.0"]
      [lein-cljsbuild "1.1.8"]]}}
 
   :cljsbuild

@@ -352,6 +352,12 @@
    (testing ":in"
      [(is (= ["a" "b"] (have string? :in ["a" "b"])))
       (is (= ["a" "b"] (have string? :in (if true ["a" "b"] [1 2]))))
+      (is (= [nil]     (have nil?   :in [nil])))
+      (is (= [false]   (have false? :in [false])))
+      (is (= [[nil] [false]] (have [:or nil? false?] :in [nil] [false])))
+      (is (= [:a :b]
+            (binding [truss/*failed-assertion-handler* nil]
+              (have string? :in [:a :b]))))
 
       (is (throws? :common {:arg {:value 1}} (have string? :in (if false ["a" "b"] [1 2]))))
       (is (= ["0" "1" "2"]                   (have string? :in (mapv str (range 3)))))

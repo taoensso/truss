@@ -318,11 +318,11 @@
              `(let [~gs-ps '~pshow
                     ~gs-pf  ~pform
                     ~gs-df  ~data-fn-form]
-                (~rfn (fn [~gs-in] (assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] [~gs-in [:in ~?x1]] ~gs-df)) ~?x1)))
+                (~rfn (fn [~gs-in] (assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] [~gs-in [:in ~?x1]] ~gs-df) true) ~?x1)))
 
            [:in :multi-x] ; (have* pred :in xs1 xs2 ...) -> [xs1   ...] or bool
            (let [rfn  (if bool? `revery? `revery)
-                 body (mapv (fn [xs] `(~rfn (fn [~gs-in] (assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] [~gs-in [:in ~xs]] ~gs-df)) ~xs)) ?xs)
+                 body (mapv (fn [xs] `(~rfn (fn [~gs-in] (assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] [~gs-in [:in ~xs]] ~gs-df) true) ~xs)) ?xs)
                  body (if bool? `(do ~@body true) body)]
              `(let [~gs-ps '~pshow
                     ~gs-pf  ~pform

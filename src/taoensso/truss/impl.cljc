@@ -210,7 +210,13 @@
      [bool? coords [psafe? pform pshow] [arg-form arg-show] data-fn-form]
      (let [cljs?         (:ns &env)
            [line column] coords
-           eval-arg?     (list-form? arg-form)
+           eval-arg? ; Bind composite arg forms so pred test and return/report use the same single evaluation.
+           (or       ; Symbols and literals instead remain inline (re-evaluated): identical for locals and
+                     ; literals, though a symbol naming a mutable var may observe mutation between reads.
+             (list-form? arg-form)
+             (vector?    arg-form)
+             (map?       arg-form)
+             (set?       arg-form))
            ns            (str *ns*)
 
            gs-error   (gensym "error")

@@ -306,7 +306,15 @@
      [(let [n (atom 0)] [(is (= (have string? (do (swap! n inc) "str")) "str")) (is (= @n 1))])
       (let [n (atom 0)] [(is (throws? (have string? (do (swap! n inc) :kw))))   (is (= @n 1))])
       (let [n (atom 0)] [(is (= (have-macro n "str") "str"))                    (is (= @n 1))])
-      (let [n (atom 0)] [(is (throws? (have-macro n :kw)))                      (is (= @n 1))])])
+      (let [n (atom 0)] [(is (throws? (have-macro n :kw)))                      (is (= @n 1))])
+
+      (let [n (atom 0)] [(is (= (have vector? [(swap! n inc)]) [1]))            (is (= @n 1))])
+      (let [n (atom 0)] [(is (= (have map?    {:n (swap! n inc)}) {:n 1}))      (is (= @n 1))])
+      (let [n (atom 0)] [(is (= (have set?    #{(swap! n inc)}) #{1}))          (is (= @n 1))])
+      (let [n (atom 0)] [(is (= (have #(map? %) {:n (swap! n inc)}) {:n 1}))    (is (= @n 1))])
+      (let [n (atom 0)] [(is (throws? :common {:arg {:value [1]}}
+                                  (have string? [(swap! n inc)])))               (is (= @n 1))])
+      (let [n (atom 0)] [(is (throws? (have (fn [_] false) #{(swap! n inc)})))  (is (= @n 1))])])
 
    (testing "Throwing predicates"
      (let [zero! (fn [n] (if (zero? n) true (throw (ex-info "" {}))))]

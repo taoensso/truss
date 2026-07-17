@@ -608,7 +608,9 @@
   NB when handling is disabled, errors thrown during argument evaluation are
   still rethrown (never silently swallowed). Custom handlers instead receive
   such errors (identified by `:arg-val` = `:truss/exception`) and may rethrow
-  or swallow them as desired.
+  or swallow them as desired. Exception: errors thrown while evaluating an
+  `:in` collection form itself (rather than its elements) are always rethrown
+  and never reach handlers.
 
   Arg given to handler is a map with keys:
 

@@ -108,16 +108,14 @@
 (defn ^:no-doc ex-info*
   "Private, don't use."
   [ns coords msg data-map cause]
-  (let [data-map
-        (cond
-          (nil? ns)                               data-map
-          coords   (assoc data-map :ns ns, :coords coords)
-          :else    (assoc data-map :ns ns))
-
+  (let [ctx *ctx*
         data-map
-        (if-let [ctx *ctx*]
-          (assoc data-map :truss/ctx ctx)
-          (do    data-map))]
+        (if (or ns ctx)
+          ;; Copy to plain map so that we can safely inject generated keys
+          ;; (which take precedence) into data maps of arb type/keys (sorted, etc.)
+          (impl/assoc-some (conj {} data-map)
+            {:ns ns, :coords (when ns coords), :truss/ctx (when ctx ctx)})
+          data-map)]
 
     (core/ex-info msg data-map cause)))
 

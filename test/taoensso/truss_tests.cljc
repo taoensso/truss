@@ -207,6 +207,8 @@
 
 (deftest _ex-info
   [(is (submap? (ex-data (truss/ex-info "msg")) {:ns string?, :coords vector?}))
+   (is (submap? (ex-data (truss/ex-info "msg" (sorted-map "a" 1))) {"a" 1, :ns string?, :coords vector?})
+     "Safely inject generated keys into data maps of arb type/keys")
    (is (= :given (-> (truss/ex-info "msg" {:truss/ctx :given}) ex-data :truss/ctx)))
    (is (submap?
          (ex-data

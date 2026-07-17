@@ -113,6 +113,42 @@
    (is (truss/error? (truss/matching-error :common  {:a :b}                    (ex-info "Test"  {:a :b :c :d}))))
    (is (truss/error? (truss/matching-error :ex-info {:a :b}                    (ex-info "Dummy" {} (ex-info "Test" {:a :b})))))
 
+   (let [error #?(:clj  (Exception.)
+                  :cljs (let [error (js/Error.)] (set! (.-message error) nil) error))
+         outer (ex-info "Outer" {} error)]
+     [(is (nil? (truss/matching-error :common  "message" error)))
+      (is (nil? (truss/matching-error :common #"message" error)))
+      (is (nil? (truss/matching-error :common  "message" outer)))
+      (is (nil? (truss/matching-error :common #"message" outer)))])
+
+   (let [error (ex-info "Exact" {})]
+     [(is (identical? error (truss/matching-error error error)))
+      (is (nil? (truss/matching-error (ex-info "Other" {}) error)))])
+
+   #?(:clj
+      (let [kind  (proxy [Exception] ["Kind"]  (equals [_] true))
+            error (proxy [Exception] ["Error"] (equals [_] true))]
+        [(is (= kind error))
+         (is (nil? (truss/matching-error kind error)))]))
+
+   (let [inner #?(:clj  (java.net.SocketException. "Inner")
+                  :cljs (js/TypeError.             "Inner"))
+         kind  #?(:clj  java.net.SocketException
+                  :cljs #(instance? js/TypeError %))
+         outer (ex-info "Outer" {} inner)]
+
+     [(is (identical? (truss/matching-error   kind  outer) inner))
+      (is (identical? (truss/matching-error #{kind} outer) inner))
+      (is (identical? (throws kind (throw outer)) inner))
+      (is (identical? (truss/matching-error :common #{"Inner"} outer) inner))])
+
+   (let [inner (ex-info "Inner info" {:id :inner})
+         outer (ex-info "Outer info" {:id :outer} inner)]
+     [(is (identical? (truss/matching-error :ex-info #{"Outer info"} outer) outer))
+      (is (identical? (truss/matching-error :ex-info #{"Inner info"} outer) inner))
+      (is (identical? (truss/matching-error :ex-info #{{:id :inner}} outer) inner))
+      (is (identical? (throws :ex-info #{{:id :inner}} (throw outer)) inner))])
+
    (is (truss/error? (truss/matching-error #{:ex-info :common} #{"foobar" "not a function" "cannot be cast"}
                      (truss/try* ("") (catch :all t t)))))])
 

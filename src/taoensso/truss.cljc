@@ -373,13 +373,46 @@
 
 (comment (catching (zero? "9")))
 
+(defn- matching-error-kind? [kind error]
+  (cond
+    (keyword? kind)
+    (case     kind
+      (:default :all-but-critical) #?(:clj (non-critical-throwable?               error) :cljs (some?                   error))
+      (:common)                    #?(:clj (instance? Exception                   error) :cljs (instance? js/Error      error))
+      (:ex-info)                   #?(:clj (instance? clojure.lang.IExceptionInfo error) :cljs (instance? ExceptionInfo error))
+      (:all :any)                  #?(:clj (instance? Throwable                   error) :cljs (some?                   error))
+      (throw
+        (ex-info "Unexpected Truss `matching-error` `kind` keyword"
+          {:given    (typed-val kind)
+           :expected '#{:default :all-but-critical :common :ex-info :all :any}})))
+
+    (error? kind) (identical? kind error) ; Exact match
+    (fn?    kind)   (kind error) ; Pred
+    (set?   kind) (impl/rsome #(matching-error-kind? % error) kind)
+    :else (instance? kind error)))
+
+(defn- matching-error-pattern? [pattern error]
+  (cond
+    (nil?             pattern) true
+    (set?             pattern) (impl/rsome #(matching-error-pattern? % error) pattern)
+    (string?          pattern) (when-let [msg  (ex-message error)] (impl/str-contains? msg pattern))
+    (impl/re-pattern? pattern) (when-let [msg  (ex-message error)] (re-find            pattern msg))
+    (map?             pattern) (when-let [data (ex-data    error)] (submap? data pattern))
+    :else
+    (unexpected-arg! pattern
+      {:param       'pattern
+       :context  `matching-error
+       :expected '#{nil set string re-pattern map}})))
+
 (defn matching-error
   "Given a platform error and criteria for matching, returns the error if it
   matches all criteria. Otherwise returns nil.
 
   `kind` may be:
     - A class (`ArithmeticException`, `AssertionError`, etc.)
-    - A special keyword as given to `try*` (`:default`, `:common`, `:ex-info`, `:all`)
+    - An exact platform error instance
+    - A special keyword as given to `try*`
+      (`:default`/`:all-but-critical`, `:common`, `:ex-info`, `:all`/`:any`)
     - A set of `kind`s  as above, at least one of which must match
     - A predicate function, (fn match? [x]) -> bool
 
@@ -394,41 +427,16 @@
   This is a low-level util, see also `throws`, `throws?`."
   ([     error] error)
   ([kind error]
-   (when-let [match?
-              (cond
-                (keyword? kind)
-                (case     kind
-                  (:default :all-but-critical) #?(:clj (non-critical-throwable?               error) :cljs (some?                   error))
-                  (:common)                    #?(:clj (instance? Exception                   error) :cljs (instance? js/Error      error))
-                  (:ex-info)                   #?(:clj (instance? clojure.lang.IExceptionInfo error) :cljs (instance? ExceptionInfo error))
-                  (:all :any)                  #?(:clj (instance? Throwable                   error) :cljs (some?                   error))
-                  (throw
-                    (ex-info "Unexpected Truss `matching-error` `kind` keyword"
-                      {:given    (typed-val kind)
-                       :expected '#{:default :common :ex-info :all}})))
-
-                (error? kind) (= kind error) ; Exact match
-                (fn?    kind) (kind error)   ; Pred
-                (set?   kind) (impl/rsome #(matching-error % error) kind)
-                :else (instance? kind error))]
-     error))
+   (if (matching-error-kind? kind error)
+     error
+     (when-let [cause (ex-cause error)]
+       (matching-error kind cause))))
 
   ([kind pattern error]
    (if-let [match?
             (and
-              (matching-error kind error)
-              (cond
-                (nil?             pattern) true
-                (set?             pattern) (impl/rsome #(matching-error kind % error) pattern)
-                (string?          pattern) (impl/str-contains?     (ex-message error) pattern)
-                (impl/re-pattern? pattern) (re-find pattern        (ex-message error))
-                (map?             pattern) (when-let [data         (ex-data    error)]
-                                             (submap? data pattern))
-                :else
-                (unexpected-arg! pattern
-                  {:param       'pattern
-                   :context  `matching-error
-                   :expected '#{nil set string re-pattern map}})))]
+              (matching-error-kind? kind error)
+              (matching-error-pattern? pattern error))]
      error
      ;; Try match cause
      (when-let [cause (ex-cause error)]
@@ -587,10 +595,11 @@
 
   `:pred` --------- Assertion predicate form  (e.g. `clojure.core/string?` sym)
   `:arg-form` ----- Assertion argument  form given  to predicate (e.g. `x` sym)
-  `:arg-val` ------ Runtime value of argument given to predicate
+  `:arg-val` ------ Runtime value of argument given to predicate, or
+                    `:truss/exception` when argument evaluation threw
 
   `:data` --------- Optional arbitrary data map provided to assertion macro
-  `:error` -------- `Throwable` or `js/Error` thrown evaluating predicate"
+  `:error` -------- `Throwable` or `js/Error` thrown evaluating argument or predicate"
 
   (fn  [failed-assertion-info]
     (-> failed-assertion-info failed-assertion-ex-info throw)))

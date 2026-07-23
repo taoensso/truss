@@ -2,6 +2,24 @@ This project uses [**Break Versioning**](https://www.taoensso.com/break-versioni
 
 ---
 
+# `v2.5.0` (2026-07-23)
+
+- **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.5.0)
+- **Versioning**: [Break Versioning](https://www.taoensso.com/break-versioning)
+
+This is a minor **performance release** that reduces overhead in runtime assertions, submap matching, and contextual exception creation. It should be a safe upgrade for all typical users of `v2.4.x`. Please see the linked commit messages below for details.
+
+\- [Peter Taoussanis](https://www.taoensso.com)
+
+## Performance improvements
+
+- \[prf] Assertions: widen safe predicates [\[bce73c7\]](https://github.com/taoensso/truss/commit/bce73c7)
+- \[prf] Assertions: inline special predicates [\[741b83a\]](https://github.com/taoensso/truss/commit/741b83a)
+- \[prf] Submap: avoid duplicate lookups [\[511362d\]](https://github.com/taoensso/truss/commit/511362d)
+- \[prf] `ex-info`: avoid copying basic data maps [\[4c761ad\]](https://github.com/taoensso/truss/commit/4c761ad)
+
+---
+
 # `v2.4.0` (2026-07-17)
 
 - **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.4.0)

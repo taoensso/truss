@@ -230,7 +230,7 @@
 
 #?(:clj
    (defmacro assert1
-     [bool? coords [psafe? pform pshow] [arg-form arg-show] data-fn-form]
+     [bool? coords [psafe? pform pshow pspecial?] [arg-form arg-show] data-fn-form]
      (let [cljs?         (:ns &env)
            [line column] coords
            local-sym?    (and (symbol? arg-form)
@@ -251,6 +251,13 @@
            gs-arg-val (gensym "arg-val")
            arg-show   (or arg-show arg-form)
 
+           pred-call
+           (fn [arg-form]
+             (if-not pspecial?
+               `(~pform ~arg-form)
+               (let [[_ [arg-sym] & body] pform]
+                 `(let [~arg-sym ~arg-form] ~@body))))
+
            fail-form ; Mirror elision semantics when `*failed-assertion-handler*` doesn't throw:
            (fn [form] ; bool assertions promise a boolean, so return true (as if elided)
              (if bool? `(do ~form true) form))]
@@ -259,12 +266,12 @@
               (if psafe?    :safe-pred :unsafe-pred)]
 
          [:local-arg :safe-pred]
-         `(if (~pform ~arg-form)
+         `(if ~(pred-call arg-form)
             ~(if bool? true arg-form)
             ~(fail-form `(taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~arg-form ~data-fn-form nil)))
 
          [:local-arg :unsafe-pred]
-         `(let [~gs-error (catching (if (~pform ~arg-form) nil FalsePredError) ~'e ~'e)]
+         `(let [~gs-error (catching (if ~(pred-call arg-form) nil FalsePredError) ~'e ~'e)]
             (if ~gs-error
               ~(fail-form `(taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~arg-form ~data-fn-form ~gs-error))
               ~(if bool? true arg-form)))
@@ -274,7 +281,7 @@
                 ~gs-error
                 (if (instance? ArgEvalError ~gs-arg-val)
                   ~gs-arg-val
-                  (if (~pform ~gs-arg-val) nil FalsePredError))]
+                  (if ~(pred-call gs-arg-val) nil FalsePredError))]
 
             (if ~gs-error
               ~(fail-form `(taoensso.truss/failed-assertion! ~ns ~line ~column ~pshow '~arg-show ~gs-arg-val ~data-fn-form ~gs-error))
@@ -286,7 +293,7 @@
                 (if (instance? ArgEvalError ~gs-arg-val)
                   ~gs-arg-val
                   (catching
-                    (if (~pform ~gs-arg-val) nil FalsePredError)
+                    (if ~(pred-call gs-arg-val) nil FalsePredError)
                     ~'e ~'e))]
 
             (if ~gs-error
@@ -334,7 +341,7 @@
 
            single-x? (nil? ?xs)
 
-           [psafe? pform pshow] (parse-pred-form &env pred-form)
+           [psafe? pform pshow pspecial?] (parse-pred-form &env pred-form)
            gs-ps (gensym "ps")
            gs-pf (gensym "pf")
            gs-df (gensym "df")
@@ -347,7 +354,7 @@
                 (if single-x? :single-x :multi-x)]
 
            [:not-in :single-x] ; (have* pred x) -> x or bool
-           `(assert1 ~bool? ~coords [~psafe? ~pform '~pshow] [~?x1] ~data-fn-form)
+           `(assert1 ~bool? ~coords [~psafe? ~pform '~pshow ~pspecial?] [~?x1] ~data-fn-form)
 
            [:not-in :multi-x] ; (have* pred x1 x2 ...) -> [x1 x2 ...] or bool
            (let [body (mapv (fn [x] `(assert1 ~bool? ~coords [~psafe? ~gs-pf ~gs-ps] [~x] ~gs-df)) ?xs)

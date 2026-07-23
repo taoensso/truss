@@ -57,6 +57,8 @@
 
 #?(:clj (defmacro ^:no-doc typed-val [x] `{:value ~x, :type (type ~x)}))
 
+(def ^:private SubmapNotFound #?(:clj (Object.) :cljs (js-obj)))
+
 (defn ^:no-doc submap?
   "Returns true iff `sub-map` is a (possibly nested) submap of `super-map`,
   i.e. iff every (nested) value in `sub-map` has the same (nested) value in `super-map`.
@@ -72,14 +74,14 @@
   [super-map sub-map]
   (reduce-kv
     (fn [_ sub-key sub-val]
-      (if (map?    sub-val)
-        (let [super-val (get super-map sub-key)]
+      (let [super-val       (get super-map   sub-key   SubmapNotFound)
+            super-contains? (not (identical? super-val SubmapNotFound))
+            super-val       (if super-contains? super-val nil)]
+        (if (map? sub-val)
           (if-let [match? (and (map? super-val) (submap? super-val sub-val))]
             true
-            (reduced false)))
+            (reduced false))
 
-        (let [super-val       (get       super-map sub-key)
-              super-contains? (contains? super-map sub-key)]
           (if-let [match?
                    (if-let [pred-fn (when (fn? sub-val) sub-val)]
                      (pred-fn super-val) ; Nil-punned (unlike data vals, fn preds can't see key presence)

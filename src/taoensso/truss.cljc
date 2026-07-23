@@ -113,9 +113,11 @@
   (let [ctx *ctx*
         data-map
         (if (or ns ctx)
-          ;; Copy to plain map so that we can safely inject generated keys
-          ;; (which take precedence) into data maps of arb type/keys (sorted, etc.)
-          (impl/assoc-some (conj {} data-map)
+          (impl/assoc-some
+            ;; Ensure map supports assoc'ing arb kvs
+            (if (or (nil? data-map) (impl/basic-map? data-map))
+              (do      data-map)
+              (conj {} data-map))
             {:ns ns, :coords (when ns coords), :truss/ctx (when ctx ctx)})
           data-map)]
 

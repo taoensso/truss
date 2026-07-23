@@ -14,6 +14,19 @@
 
 #?(:clj (defmacro legacy-assertion-ex-data? [] (= (System/getProperty "taoensso.truss.legacy-assertion-ex-data") "true")))
 
+(defn basic-map?
+  "Returns true iff given a standard map type known to
+  support assoc'ing arbitrary key and value types."
+  [x]
+  #?(:clj
+     (or
+       (instance? clojure.lang.PersistentArrayMap x)
+       (instance? clojure.lang.PersistentHashMap  x))
+     :cljs
+     (or
+       (instance? PersistentArrayMap x)
+       (instance? PersistentHashMap  x))))
+
 ;;;; Encore imports
 
 #?(:clj (defn list-form? [x] (or (list? x) (instance? clojure.lang.Cons x))))

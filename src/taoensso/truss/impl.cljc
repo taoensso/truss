@@ -99,9 +99,16 @@
 #?(:clj (def ^:private safe-pred-forms
           (let [names
                 (mapv name
-                  '#{nil? some? string? integer? number? symbol? keyword? float?
-                     set? vector? coll? list? ifn? fn? associative? sequential? delay?
-                     sorted? counted? reversible? true? false? identity not boolean})]
+                  '#{nil? some? any? string? boolean? char? bytes? uri?
+                     integer? int? nat-int? pos-int? neg-int? number?
+                     float? double? decimal? ratio? rational?
+                     symbol? keyword? ident? simple-ident? qualified-ident?
+                     simple-symbol? qualified-symbol? simple-keyword? qualified-keyword?
+                     map? map-entry? record? set? vector? coll? list? seq?
+                     ifn? fn? associative? sequential? seqable? indexed? chunked-seq?
+                     delay? future? volatile? reduced? sorted? counted? reversible?
+                     inst? uuid? class? var? reader-conditional? tagged-literal? special-symbol?
+                     true? false? identity not boolean})]
             (-> #{}
               (into (mapv #(symbol "clojure.core" %) names))
               (into (mapv #(symbol    "cljs.core" %) names))))))
@@ -142,6 +149,7 @@
                       {:pred-form pred-form}))))
 
               gsym (or gsym (gensym "arg"))
+              clj? (nil? (:ns macro-env))
 
               [safe? body]
               (case kind
@@ -160,7 +168,7 @@
                 :n>=              [false `(>= (count ~gsym) ~a1)]
                 :n<=              [false `(<= (count ~gsym) ~a1)]
 
-                :instance?        [false `(instance?  ~a1 ~gsym)]
+                :instance?        [clj?  `(instance?  ~a1 ~gsym)]
                 :satisfies?       [false `(satisfies? ~a1 ~gsym)]
 
                 (:and :or :not) ; Composition

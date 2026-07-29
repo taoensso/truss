@@ -2,6 +2,19 @@ This project uses [**Break Versioning**](https://www.taoensso.com/break-versioni
 
 ---
 
+# `v2.5.1` (2026-07-29)
+
+- **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.5.1)
+- **Versioning**: [Break Versioning](https://www.taoensso.com/break-versioning)
+
+This is a minor **hotfix release**, it should be a safe upgrade for users of `v2.5.0`.
+
+## Fixes
+
+- \[fix] `ex-map*`: retain `:type` for message-less errors [[d5aa9a9]](https://github.com/taoensso/truss/commit/d5aa9a9)
+
+---
+
 # `v2.5.0` (2026-07-23)
 
 - **Dependency**: [on Clojars](https://clojars.org/com.taoensso/truss/versions/2.5.0)

@@ -60,7 +60,12 @@
            (assoc ex1-map
              :chain [ex2-map ex1-map]
              :trace #?(:clj #(vector? (force %))
-                       :cljs string?))))]))
+                       :cljs string?))))
+
+     ;; Message-less errors retain `:type`
+     #?@(:clj
+         [(is (=       (truss/ex-chain :as-map (Exception. nil ex1)) [{:type 'java.lang.Exception} ex1-map]))
+          (is (submap? (truss/ex-map           (Exception.))          {:type 'java.lang.Exception}))])]))
 
 (deftest _throws?
   (let [throw-common   (fn [] (throw (ex-info "Shenanigans" {:a :a1 :b :b1})))

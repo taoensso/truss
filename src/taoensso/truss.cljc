@@ -248,12 +248,16 @@
 
 (defn ^:no-doc ex-map*
   "Private, don't use.
-  Returns ?{:keys [type msg data]} for given platform error."
+  Returns ?{:keys [type msg data]} for given platform error.
+  NB `:msg` and `:data` may be absent (e.g. message-less errors)."
   [x]
-  (when-let [msg             (ex-message x)]
-    (if-let [data (not-empty (ex-data    x))]
-      {:type (ex-type x), :msg msg, :data data}
-      {:type (ex-type x), :msg msg})))
+  (let [m (ex-message x)]
+    (when (or m (error? x))
+      (let [t            (ex-type x)
+            d (not-empty (ex-data x))]
+        (if m
+          (if d {:type t, :msg m, :data d} {:type t, :msg m})
+          (if d {:type t,         :data d} {:type t}))))))
 
 (comment (ex-map* (ex-info "Ex2" {:k2 "v2"} (ex-info "Ex1" {:k1 "v1"}))))
 
